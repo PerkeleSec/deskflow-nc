@@ -201,6 +201,19 @@ set(CMAKE_AUTORCC ON)
 
 message(STATUS "Qt version: ${Qt6_VERSION}")
 
+# deskflow-nc: clipboard sharing is compiled out by default in this fork.
+# When OFF, DESKFLOW_NO_CLIPBOARD is defined for every target: the clipboard
+# protocol messages are neither sent nor acted on, the screen-level clipboard
+# calls become no-ops, and the platform clipboard back-ends are replaced with
+# stubs so that no OS clipboard API is referenced by the binaries at all.
+option(DESKFLOW_ENABLE_CLIPBOARD "Enable clipboard sharing" OFF)
+if(NOT DESKFLOW_ENABLE_CLIPBOARD)
+  add_compile_definitions(DESKFLOW_NO_CLIPBOARD)
+  message(STATUS "Clipboard sharing: DISABLED (compiled out)")
+else()
+  message(STATUS "Clipboard sharing: enabled")
+endif()
+
 include(cmake/Libraries.cmake)
 configure_libs()
 

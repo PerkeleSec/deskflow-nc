@@ -183,8 +183,10 @@ bool Screen::leave()
       LOG_ERR("failed to run screen exit command");
   }
 
+#ifndef DESKFLOW_NO_CLIPBOARD
   // make sure our idea of clipboard ownership is correct
   m_screen->checkClipboards();
+#endif
 
   // now not on screen
   m_entered = false;
@@ -206,12 +208,23 @@ void Screen::warpCursor(int32_t x, int32_t y)
 
 void Screen::setClipboard(ClipboardID id, const IClipboard *clipboard)
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never write to the system clipboard
+  (void)id;
+  (void)clipboard;
+#else
   m_screen->setClipboard(id, clipboard);
+#endif
 }
 
 void Screen::grabClipboard(ClipboardID id)
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never take clipboard ownership
+  (void)id;
+#else
   m_screen->setClipboard(id, nullptr);
+#endif
 }
 
 void Screen::screensaver(bool) const
@@ -396,7 +409,14 @@ void *Screen::getEventTarget() const
 
 bool Screen::getClipboard(ClipboardID id, IClipboard *clipboard) const
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never read the system clipboard
+  (void)id;
+  (void)clipboard;
+  return false;
+#else
   return m_screen->getClipboard(id, clipboard);
+#endif
 }
 
 void Screen::getShape(int32_t &x, int32_t &y, int32_t &w, int32_t &h) const
@@ -420,10 +440,12 @@ void Screen::enablePrimary()
 
 void Screen::enableSecondary()
 {
+#ifndef DESKFLOW_NO_CLIPBOARD
   // assume primary has all clipboards
   for (ClipboardID id = 0; id < kClipboardEnd; ++id) {
     grabClipboard(id);
   }
+#endif
 }
 
 void Screen::disablePrimary()

@@ -13,7 +13,9 @@
 #include "common/Settings.h"
 #include "common/VersionInfo.h"
 
+#ifndef DESKFLOW_NO_CLIPBOARD
 #include <QClipboard>
+#endif
 
 AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent), ui{std::make_unique<Ui::AboutDialog>()}
 {
@@ -26,8 +28,15 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent), ui{std::make_unique
   ui->lblIcon->setPixmap(QPixmap(QIcon::fromTheme(kRevFqdnName).pixmap(QSize().scaled(pixmapSize, Qt::KeepAspectRatio)))
   );
 
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // "copy version info" is the one place the GUI would write to the local
+  // clipboard. It is dropped so that no build artifact references QClipboard
+  // at all and the symbol checks in doc/no-clipboard.md stay clean.
+  ui->btnCopyVersion->setVisible(false);
+#else
   ui->btnCopyVersion->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::EditCopy));
   connect(ui->btnCopyVersion, &QPushButton::clicked, this, &AboutDialog::copyVersionText);
+#endif
 
   ui->lblVersion->setText(kDisplayVersion);
   ui->lblDescription->setText(kAppDescription);
@@ -49,6 +58,9 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent), ui{std::make_unique
 
 void AboutDialog::copyVersionText() const
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // never connected in this build; kept only so the header stays unchanged
+#else
   QString infoString = QStringLiteral("%1: %2 (%3)\nQt: %4\nSystem: %5")
                            .arg(kAppName, kVersion, kVersionGitSha, qVersion(), QSysInfo::prettyProductName());
   if (Settings::isPortableMode()) {
@@ -59,6 +71,7 @@ void AboutDialog::copyVersionText() const
                         .arg(qEnvironmentVariable("XDG_CURRENT_DESKTOP"), qEnvironmentVariable("XDG_SESSION_TYPE")));
 #endif
   QGuiApplication::clipboard()->setText(infoString);
+#endif
 }
 
 AboutDialog::~AboutDialog() = default;

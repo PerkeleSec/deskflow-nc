@@ -181,10 +181,12 @@ void MSWindowsScreen::enable()
   m_fixTimer = m_events->newTimer(1.0, nullptr);
   m_events->addHandler(EventTypes::Timer, m_fixTimer, [this](const auto &) { handleFixes(); });
 
+#ifndef DESKFLOW_NO_CLIPBOARD
   // install our clipboard snooper
   if (!AddClipboardFormatListener(m_window)) {
     LOG_WARN("failed to add the clipboard format listener: %d", GetLastError());
   }
+#endif
 
   // track the active desk and (re)install the hooks
   m_desks->enable();
@@ -217,10 +219,12 @@ void MSWindowsScreen::disable()
   // tell key state
   m_keyState->disable();
 
+#ifndef DESKFLOW_NO_CLIPBOARD
   // stop snooping the clipboard
   if (!RemoveClipboardFormatListener(m_window)) {
     LOG_WARN("failed to remove the clipboard format listener: %d", GetLastError());
   }
+#endif
 
   // uninstall fix timer
   if (m_fixTimer != nullptr) {
@@ -318,6 +322,11 @@ void MSWindowsScreen::leave()
 
 bool MSWindowsScreen::setClipboard(ClipboardID, const IClipboard *src)
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never touch the Windows clipboard
+  (void)src;
+  return false;
+#else
   MSWindowsClipboard dst(m_window);
   if (src != nullptr) {
     // save clipboard data
@@ -331,10 +340,12 @@ bool MSWindowsScreen::setClipboard(ClipboardID, const IClipboard *src)
     dst.close();
     return true;
   }
+#endif
 }
 
 void MSWindowsScreen::checkClipboards()
 {
+#ifndef DESKFLOW_NO_CLIPBOARD
   // if we think we own the clipboard but we don't then somebody
   // grabbed the clipboard on this screen without us knowing.
   // tell the server that this screen grabbed the clipboard.
@@ -352,6 +363,7 @@ void MSWindowsScreen::checkClipboards()
     sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardClipboard);
     sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardSelection);
   }
+#endif
 }
 
 void MSWindowsScreen::openScreensaver(bool notify)
@@ -418,9 +430,15 @@ void *MSWindowsScreen::getEventTarget() const
 
 bool MSWindowsScreen::getClipboard(ClipboardID, IClipboard *dst) const
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never read the Windows clipboard
+  (void)dst;
+  return false;
+#else
   MSWindowsClipboard src(m_window);
   Clipboard::copy(dst, &src);
   return true;
+#endif
 }
 
 void MSWindowsScreen::getShape(int32_t &x, int32_t &y, int32_t &w, int32_t &h) const
@@ -935,6 +953,7 @@ bool MSWindowsScreen::onEvent(HWND, UINT msg, WPARAM wParam, LPARAM lParam, LRES
   switch (msg) {
 
   case WM_CLIPBOARDUPDATE: {
+#ifndef DESKFLOW_NO_CLIPBOARD
     DWORD clipboardSequenceNumber = GetClipboardSequenceNumber();
     LOG_DEBUG("clipboard update: sequence number %d, current %d", clipboardSequenceNumber, m_clipboardSequenceNumber);
 
@@ -942,6 +961,7 @@ bool MSWindowsScreen::onEvent(HWND, UINT msg, WPARAM wParam, LPARAM lParam, LRES
       m_clipboardSequenceNumber = clipboardSequenceNumber;
       onClipboardChange();
     }
+#endif
     return 0; // message processed
   }
 
@@ -1336,6 +1356,7 @@ bool MSWindowsScreen::onDisplayChange()
 
 void MSWindowsScreen::onClipboardChange()
 {
+#ifndef DESKFLOW_NO_CLIPBOARD
   // now notify client that somebody changed the clipboard (unless
   // we're the owner).
   if (!MSWindowsClipboard::isOwnedByDeskflow()) {
@@ -1349,6 +1370,7 @@ void MSWindowsScreen::onClipboardChange()
     LOG_DEBUG("clipboard changed: %s owned", kAppId);
     m_ownClipboard = true;
   }
+#endif
 }
 
 void MSWindowsScreen::warpCursorNoFlush(int32_t x, int32_t y)

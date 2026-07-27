@@ -399,7 +399,13 @@ private:
   deskflow::Screen *m_screen;
 
   IEventQueue *m_events = nullptr;
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out; a size of 0 also short-circuits the
+  // grab/change handlers even if something manages to flip m_enableClipboard
+  size_t m_maximumClipboardSize = 0;
+#else
   size_t m_maximumClipboardSize = INT_MAX;
+#endif
   ClientListener *m_clientListener = nullptr;
   Stopwatch m_switchTwoTapTimer;
 
@@ -467,5 +473,11 @@ private:
 
   bool m_defaultLockToScreenState = false;
   bool m_disableLockToScreen = false;
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out; nothing ever assigns this again, so it
+  // stays false for the lifetime of the server
+  bool m_enableClipboard = false;
+#else
   bool m_enableClipboard = true;
+#endif
 };

@@ -21,21 +21,21 @@ if(UNIX AND NOT APPLE)
   cmake_pop_check_state()
 endif()
 
+# deskflow-nc: pick the real clipboard back-end or the stub one. The stub keeps
+# the same class interface so the screen sources compile unchanged, but it does
+# not reference a single OS clipboard API, which is what makes the "no clipboard
+# symbols in the binary" check in doc/no-clipboard.md meaningful.
+if(DESKFLOW_ENABLE_CLIPBOARD)
+  set(NC_CLIPBOARD_DIR ".")
+else()
+  set(NC_CLIPBOARD_DIR "noclipboard")
+endif()
+
 if(WIN32)
   set(PLATFORM_SOURCES
     IMSWindowsClipboardFacade.h
-    MSWindowsClipboard.cpp
+    ${NC_CLIPBOARD_DIR}/MSWindowsClipboard.cpp
     MSWindowsClipboard.h
-    MSWindowsClipboardAnyTextConverter.cpp
-    MSWindowsClipboardAnyTextConverter.h
-    MSWindowsClipboardBitmapConverter.cpp
-    MSWindowsClipboardBitmapConverter.h
-    MSWindowsClipboardFacade.cpp
-    MSWindowsClipboardFacade.h
-    MSWindowsClipboardHTMLConverter.cpp
-    MSWindowsClipboardHTMLConverter.h
-    MSWindowsClipboardUTF16Converter.cpp
-    MSWindowsClipboardUTF16Converter.h
     MSWindowsDebugOutputter.cpp
     MSWindowsDebugOutputter.h
     MSWindowsDesks.cpp
@@ -59,27 +59,29 @@ if(WIN32)
     MSWindowsWatchdog.cpp
     MSWindowsWatchdog.h
   )
+  if(DESKFLOW_ENABLE_CLIPBOARD)
+    # format converters and the clipboard facade are only reachable from the
+    # real MSWindowsClipboard.cpp, so they drop out of the build with it
+    list(APPEND PLATFORM_SOURCES
+      MSWindowsClipboardAnyTextConverter.cpp
+      MSWindowsClipboardAnyTextConverter.h
+      MSWindowsClipboardBitmapConverter.cpp
+      MSWindowsClipboardBitmapConverter.h
+      MSWindowsClipboardFacade.cpp
+      MSWindowsClipboardFacade.h
+      MSWindowsClipboardHTMLConverter.cpp
+      MSWindowsClipboardHTMLConverter.h
+      MSWindowsClipboardUTF16Converter.cpp
+      MSWindowsClipboardUTF16Converter.h
+    )
+  endif()
 elseif(APPLE)
   set(PLATFORM_SOURCES
     IOSXKeyResource.cpp
     IOSXKeyResource.h
     OSXAutoTypes.h
-    OSXClipboard.cpp
+    ${NC_CLIPBOARD_DIR}/OSXClipboard.cpp
     OSXClipboard.h
-    OSXClipboardAnyBitmapConverter.cpp
-    OSXClipboardAnyBitmapConverter.h
-    OSXClipboardAnyTextConverter.cpp
-    OSXClipboardAnyTextConverter.h
-    OSXClipboardBMPConverter.cpp
-    OSXClipboardBMPConverter.h
-    OSXClipboardHTMLConverter.cpp
-    OSXClipboardHTMLConverter.h
-    OSXClipboardTextConverter.cpp
-    OSXClipboardTextConverter.h
-    OSXClipboardUTF8Converter.cpp
-    OSXClipboardUTF8Converter.h
-    OSXClipboardUTF16Converter.cpp
-    OSXClipboardUTF16Converter.h
     OSXCocoaApp.h
     OSXCocoaApp.m
     OSXEventQueueBuffer.cpp
@@ -88,8 +90,6 @@ elseif(APPLE)
     OSXKeyState.h
     OSXMediaKeySupport.h
     OSXMediaKeySupport.m
-    OSXPasteboardPeeker.h
-    OSXPasteboardPeeker.m
     OSXPowerManager.cpp
     OSXPowerManager.h
     OSXScreen.h
@@ -102,6 +102,28 @@ elseif(APPLE)
     OSXUchrKeyResource.cpp
     OSXUchrKeyResource.h
   )
+  if(DESKFLOW_ENABLE_CLIPBOARD)
+    # format converters are only reachable from the real OSXClipboard.cpp,
+    # so they drop out of the build with it
+    list(APPEND PLATFORM_SOURCES
+      OSXClipboardAnyBitmapConverter.cpp
+      OSXClipboardAnyBitmapConverter.h
+      OSXClipboardAnyTextConverter.cpp
+      OSXClipboardAnyTextConverter.h
+      OSXClipboardBMPConverter.cpp
+      OSXClipboardBMPConverter.h
+      OSXClipboardHTMLConverter.cpp
+      OSXClipboardHTMLConverter.h
+      OSXClipboardTextConverter.cpp
+      OSXClipboardTextConverter.h
+      OSXClipboardUTF8Converter.cpp
+      OSXClipboardUTF8Converter.h
+      OSXClipboardUTF16Converter.cpp
+      OSXClipboardUTF16Converter.h
+      OSXPasteboardPeeker.h
+      OSXPasteboardPeeker.m
+    )
+  endif()
 elseif(UNIX)
   set(PLATFORM_SOURCES
     XDGPortalRegistry.h

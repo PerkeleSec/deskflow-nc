@@ -204,8 +204,15 @@ void ClientProxy1_0::handleFlatline()
 
 bool ClientProxy1_0::getClipboard(ClipboardID id, IClipboard *clipboard) const
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: the proxy never holds clipboard data
+  (void)id;
+  (void)clipboard;
+  return false;
+#else
   Clipboard::copy(clipboard, &m_clipboard[id].m_clipboard);
   return true;
+#endif
 }
 
 void ClientProxy1_0::getShape(int32_t &x, int32_t &y, int32_t &w, int32_t &h) const
@@ -245,11 +252,16 @@ void ClientProxy1_0::setClipboard(ClipboardID id, const IClipboard *clipboard)
 
 void ClientProxy1_0::grabClipboard(ClipboardID id)
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never announce a clipboard grab
+  (void)id;
+#else
   LOG_DEBUG("send grab clipboard %d to \"%s\"", id, getName().c_str());
   ProtocolUtil::writef(getStream(), kMsgCClipboard, id, 0);
 
   // this clipboard is now dirty
   m_clipboard[id].m_dirty = true;
+#endif
 }
 
 void ClientProxy1_0::setClipboardDirty(ClipboardID id, bool dirty)
@@ -430,11 +442,13 @@ bool ClientProxy1_0::recvGrabClipboard()
     return false;
   }
 
+#ifndef DESKFLOW_NO_CLIPBOARD
   // notify
   auto *info = new ClipboardInfo;
   info->m_id = id;
   info->m_sequenceNumber = seqNum;
   m_events->addEvent(Event(EventTypes::ClipboardGrabbed, getEventTarget(), info));
+#endif
 
   return true;
 }

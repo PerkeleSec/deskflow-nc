@@ -141,7 +141,13 @@ XWindowsScreen::XWindowsScreen(const char *displayName, bool isPrimary, IEventQu
 
   // initialize the clipboards
   for (ClipboardID id = 0; id < kClipboardEnd; ++id) {
+#ifdef DESKFLOW_NO_CLIPBOARD
+    // clipboard sharing is compiled out: no X selection is ever owned or read.
+    // Every user of m_clipboard[id] already handles a null entry.
+    m_clipboard[id] = nullptr;
+#else
     m_clipboard[id] = new XWindowsClipboard(m_display, m_window, id);
+#endif
   }
 
   // install event handlers

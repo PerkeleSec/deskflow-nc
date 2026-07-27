@@ -1094,11 +1094,25 @@ void Server::processOptions()
     } else if (id == kOptionDisableLockToScreen) {
       m_disableLockToScreen = (value != 0);
     } else if (id == kOptionClipboardSharing) {
+#ifdef DESKFLOW_NO_CLIPBOARD
+      // the option is still parsed so old config files keep loading, but it
+      // cannot switch clipboard sharing back on: it is not in this build
+      if (value) {
+        LOG_NOTE("ignoring clipboardSharing option: clipboard sharing is not built in");
+      }
+#else
       m_enableClipboard = value;
       if (!m_enableClipboard) {
         LOG_INFO("clipboard sharing is disabled");
       }
+#endif
     } else if (id == kOptionClipboardSharingSize) {
+#ifdef DESKFLOW_NO_CLIPBOARD
+      // likewise: the size limit stays pinned at 0
+      if (value > 0) {
+        LOG_NOTE("ignoring clipboardSharingSize option: clipboard sharing is not built in");
+      }
+#else
       if (value <= 0) {
         m_maximumClipboardSize = 0;
         LOG_INFO(
@@ -1108,6 +1122,7 @@ void Server::processOptions()
       } else {
         m_maximumClipboardSize = static_cast<size_t>(value);
       }
+#endif
     }
   }
   if (m_relativeMoves && !newRelativeMoves) {
