@@ -11,8 +11,16 @@ runs:
         # feeds package metadata, so the -nc<n> part is stripped here. The full
         # tag is kept in DESKFLOW_PACKAGE_VERSION, which is what ends up in the
         # artifact filenames.
-        DESCRIBE=$(git describe --long | sed -E 's/-nc[0-9]+//')
-        echo "DESKFLOW_VERSION=$(echo "$DESCRIBE" | sed 's/-/./g;s/v//g'  | grep -o '^[0-9]*.[0-9]*.[0-9]*.[0-9]*')">> $GITHUB_ENV
+        # This step runs under `bash -e -o pipefail`, so every stage has to be
+        # allowed to fail softly: a checkout with no reachable tag must produce
+        # a warning and a fallback, not abort the whole build.
+        DESCRIBE=$(git describe --long --tags 2>/dev/null | sed -E 's/-nc[0-9]+//' || true)
+        VERSION=$(echo "$DESCRIBE" | sed 's/-/./g;s/v//g' | grep -o '^[0-9]*.[0-9]*.[0-9]*.[0-9]*' || true)
+        if [ -z "$VERSION" ]; then
+          echo "::warning::no reachable tag, falling back to 0.0.0.0 - push the upstream release tags to this fork so git describe works"
+          VERSION=0.0.0.0
+        fi
+        echo "DESKFLOW_VERSION=${VERSION}" >> $GITHUB_ENV
         if [[ "$GITHUB_REF" == *"tags/v"* ]]; then
           echo "DESKFLOW_PACKAGE_VERSION=$(echo $GITHUB_REF | sed 's,refs/tags/v,,g')">> $GITHUB_ENV
         else
