@@ -6,6 +6,17 @@ SPDX-PackageName = "deskflow"
 SPDX-PackageSupplier = "Deskflow Devs"
 SPDX-PackageDownloadLocation = "https://github.com/deskflow/deskflow"
 
+# deskflow-nc: packaging manifests for this fork's Homebrew tap and Scoop
+# bucket. JSON cannot carry a comment header, so they are annotated here.
+[[annotations]]
+path = [
+   "Casks/**"
+ , "bucket/**"
+ , "packaging/**"
+]
+SPDX-FileCopyrightText = "deskflow-nc contributors"
+SPDX-License-Identifier = "MIT"
+
 [[annotations]]
 path = [
    ".github/**"
