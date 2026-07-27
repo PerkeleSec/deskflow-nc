@@ -8,6 +8,10 @@ it.
 
 Replace `PerkeleSec/deskflow-nc` below if you host the fork somewhere else.
 
+For a full walkthrough — pairing a Windows server with a macOS client, plus
+troubleshooting and clean removal — see
+[INSTALL-DETAILED.md](INSTALL-DETAILED.md).
+
 > [!CAUTION]
 > **Nothing has been released yet — these commands will not work until a tag is
 > cut.** The branch is now based on upstream `master`, which carries the fixes
