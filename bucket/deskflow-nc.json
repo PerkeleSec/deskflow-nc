@@ -1,6 +1,6 @@
 {
     "$schema": "https://raw.githubusercontent.com/ScoopInstaller/Scoop/master/schema.json",
-    "version": "0.0.0-nc0",
+    "version": "1.26.0-nc1",
     "description": "Keyboard and mouse sharing utility, built with clipboard sharing removed",
     "homepage": "https://github.com/PerkeleSec/deskflow-nc",
     "license": "GPL-2.0-only",
@@ -10,22 +10,23 @@
     ],
     "architecture": {
         "64bit": {
-            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v0.0.0-nc0/deskflow-0.0.0-nc0-win-x64-portable.7z",
-            "hash": "0000000000000000000000000000000000000000000000000000000000000000",
-            "extract_dir": "deskflow-0.0.0-nc0-win-x64-portable"
+            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v1.26.0-nc1/deskflow-1.26.0-nc1-win-x64.7z",
+            "hash": "41baf4dd4254a737fe85983b544bcc5a4c3ee940d2bbebd0c107b18fc45e68f5",
+            "extract_dir": "deskflow-1.26.0-nc1-win-x64-portable"
         },
         "arm64": {
-            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v0.0.0-nc0/deskflow-0.0.0-nc0-win-arm64-portable.7z",
-            "hash": "0000000000000000000000000000000000000000000000000000000000000000",
-            "extract_dir": "deskflow-0.0.0-nc0-win-arm64-portable"
+            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v1.26.0-nc1/deskflow-1.26.0-nc1-win-arm64.7z",
+            "hash": "39695c8db730a0567485052898b970609458aa1e56ea0ff0e44e6ddade11c265",
+            "extract_dir": "deskflow-1.26.0-nc1-win-arm64-portable"
         }
     },
     "bin": [
-        "deskflow-core.exe"
+        "deskflow-core.exe",
+        "deskflow.exe"
     ],
     "shortcuts": [
         [
-            "Deskflow.exe",
+            "deskflow.exe",
             "Deskflow NC"
         ]
     ],

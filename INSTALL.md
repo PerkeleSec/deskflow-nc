@@ -70,7 +70,7 @@ curl -fL -o /tmp/deskflow-nc.dmg https://github.com/PerkeleSec/deskflow-nc/relea
 hdiutil attach /tmp/deskflow-nc.dmg -nobrowse -quiet && cp -R "/Volumes/Deskflow/Deskflow.app" /Applications/ && hdiutil detach "/Volumes/Deskflow" -quiet && xattr -dr com.apple.quarantine /Applications/Deskflow.app
 ```
 
-Use `-macos-x64.dmg` on Intel Macs.
+Use `-macos-x86_64.dmg` on Intel Macs.
 
 ## Windows
 

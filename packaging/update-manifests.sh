@@ -87,7 +87,9 @@ hash_for() {
 }
 
 DMG_ARM="deskflow-${VERSION}-macos-arm64.dmg"
-DMG_X64="deskflow-${VERSION}-macos-x64.dmg"
+# note the asymmetry: macOS/Linux names come from CMAKE_SYSTEM_PROCESSOR
+# ("x86_64"), Windows from VSCMD_ARG_TGT_ARCH ("x64")
+DMG_X64="deskflow-${VERSION}-macos-x86_64.dmg"
 # CPack appends "-portable" to archive generators only (see
 # deploy/windows/cpack-options.cmake.in). The MSI and the macOS dmg keep the
 # plain name, so do not copy this suffix onto them.

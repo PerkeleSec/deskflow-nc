@@ -10,11 +10,14 @@
 #
 # Regenerate this file after a release with packaging/update-manifests.sh.
 cask "deskflow-nc" do
-  arch arm: "arm64", intel: "x64"
+  # Intel is "x86_64" here, not "x64" as on Windows: the macOS package name comes
+  # from CMAKE_SYSTEM_PROCESSOR, while the Windows one comes from
+  # VSCMD_ARG_TGT_ARCH. See deploy/mac/deploy.cmake and deploy/windows/deploy.cmake.
+  arch arm: "arm64", intel: "x86_64"
 
-  version "0.0.0-nc0"
-  sha256 arm:   "0000000000000000000000000000000000000000000000000000000000000000",
-         intel: "0000000000000000000000000000000000000000000000000000000000000000"
+  version "1.26.0-nc1"
+  sha256 arm:   "5bd4b79ebcc9d8a907dc3cd60b9e3f15cf761e3df1427a0df4050b5b6c558689",
+         intel: "5cac2b407541409c90d904ad8be18ce89cd9f819f718ff697bff3b1f41a76b95"
 
   url "https://github.com/PerkeleSec/deskflow-nc/releases/download/v#{version}/deskflow-#{version}-macos-#{arch}.dmg",
       verified: "github.com/PerkeleSec/deskflow-nc/"
