@@ -19,9 +19,7 @@
 
 #include "platform/OSXClipboard.h"
 
-OSXClipboard::OSXClipboard()
-    : m_time(0),
-      m_pboard(nullptr)
+OSXClipboard::OSXClipboard() : m_time(0), m_pboard(nullptr)
 {
   // no pasteboard is created and no converters are registered
 }
