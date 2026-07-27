@@ -1,9 +1,27 @@
+> [!CAUTION]
+> **No release has been published yet, and this branch must not be shipped as-is.**
+> It is based on upstream `v1.26.0`, which predates the fixes for
+> [CVE-2026-41477](https://github.com/deskflow/deskflow/commit/e7040a1f820b7f5729407234b69a43a3b720dac7)
+> — a local privilege escalation via the Windows daemon's world-accessible IPC
+> endpoint. Upstream has not yet tagged a release containing the fix. Choosing
+> the base to build on is tracked before any tag is cut; see
+> [doc/no-clipboard.md](doc/no-clipboard.md#upstream-base-and-known-cves).
+
 > [!IMPORTANT]
 > **This is `deskflow-nc`, a fork of [Deskflow](https://github.com/deskflow/deskflow) with clipboard sharing compiled out.**
 >
 > Keyboard, mouse and screen switching behave exactly as upstream. Clipboard
-> contents cannot cross between machines, and the binaries reference no OS
-> clipboard API at all — a CI step fails the build if they do.
+> contents cannot cross between machines on any platform: the clipboard
+> protocol messages are never sent, and anything a stock peer sends is read off
+> the wire and discarded without being buffered.
+>
+> On **Windows and macOS** — the platforms this fork ships packages for — the
+> guarantee is stronger and machine-checked: the platform clipboard back-ends
+> are replaced by stubs, so the binaries reference no OS clipboard API at all,
+> and a CI step fails the build if any appears. **On Linux that symbol-level
+> check is not yet enforced**; the X11 and Wayland clipboard classes are still
+> compiled, they are simply never instantiated. See
+> [doc/no-clipboard.md](doc/no-clipboard.md#3-platform-back-ends--the-os-clipboard-apis-are-not-linked-in).
 >
 > - **Install it:** [INSTALL.md](INSTALL.md) — `brew` on macOS, `scoop` or MSI on Windows.
 > - **What was changed and how to check it:** [doc/no-clipboard.md](doc/no-clipboard.md).

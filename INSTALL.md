@@ -8,6 +8,13 @@ it.
 
 Replace `PerkeleSec/deskflow-nc` below if you host the fork somewhere else.
 
+> [!CAUTION]
+> **Nothing has been released yet — these commands will not work, by design.**
+> The branch is based on upstream `v1.26.0`, which predates the fix for
+> CVE-2026-41477 (local privilege escalation via the Windows daemon IPC
+> endpoint). No tag will be cut until that is resolved. See
+> [doc/no-clipboard.md](doc/no-clipboard.md#upstream-base-and-known-cves).
+
 > [!IMPORTANT]
 > These builds are not signed with an Apple Developer ID and not signed with an
 > Authenticode certificate. macOS and Windows will both say so. If your IT

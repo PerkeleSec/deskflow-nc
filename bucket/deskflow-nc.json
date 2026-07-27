@@ -10,14 +10,14 @@
     ],
     "architecture": {
         "64bit": {
-            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v0.0.0-nc0/deskflow-0.0.0-nc0-win-x64.7z",
+            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v0.0.0-nc0/deskflow-0.0.0-nc0-win-x64-portable.7z",
             "hash": "0000000000000000000000000000000000000000000000000000000000000000",
-            "extract_dir": "deskflow-0.0.0-nc0-win-x64"
+            "extract_dir": "deskflow-0.0.0-nc0-win-x64-portable"
         },
         "arm64": {
-            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v0.0.0-nc0/deskflow-0.0.0-nc0-win-arm64.7z",
+            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v0.0.0-nc0/deskflow-0.0.0-nc0-win-arm64-portable.7z",
             "hash": "0000000000000000000000000000000000000000000000000000000000000000",
-            "extract_dir": "deskflow-0.0.0-nc0-win-arm64"
+            "extract_dir": "deskflow-0.0.0-nc0-win-arm64-portable"
         }
     },
     "bin": [
@@ -35,12 +35,12 @@
     "autoupdate": {
         "architecture": {
             "64bit": {
-                "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v$version/deskflow-$version-win-x64.7z",
-                "extract_dir": "deskflow-$version-win-x64"
+                "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v$version/deskflow-$version-win-x64-portable.7z",
+                "extract_dir": "deskflow-$version-win-x64-portable"
             },
             "arm64": {
-                "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v$version/deskflow-$version-win-arm64.7z",
-                "extract_dir": "deskflow-$version-win-arm64"
+                "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v$version/deskflow-$version-win-arm64-portable.7z",
+                "extract_dir": "deskflow-$version-win-arm64-portable"
             }
         },
         "hash": {

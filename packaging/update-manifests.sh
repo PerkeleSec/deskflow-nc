@@ -88,8 +88,11 @@ hash_for() {
 
 DMG_ARM="deskflow-${VERSION}-macos-arm64.dmg"
 DMG_X64="deskflow-${VERSION}-macos-x64.dmg"
-ZIP_X64="deskflow-${VERSION}-win-x64.7z"
-ZIP_ARM="deskflow-${VERSION}-win-arm64.7z"
+# CPack appends "-portable" to archive generators only (see
+# deploy/windows/cpack-options.cmake.in). The MSI and the macOS dmg keep the
+# plain name, so do not copy this suffix onto them.
+ZIP_X64="deskflow-${VERSION}-win-x64-portable.7z"
+ZIP_ARM="deskflow-${VERSION}-win-arm64-portable.7z"
 
 echo "hashing macOS assets..."
 H_DMG_ARM=$(hash_for "$DMG_ARM")
@@ -101,8 +104,8 @@ H_ZIP_ARM=$(hash_for "$ZIP_ARM")
 # Scoop needs to know whether the archive wraps everything in a top-level
 # directory. CPack normally does, but confirm it when we can rather than
 # shipping a manifest that silently installs an empty package.
-EXTRACT_X64="deskflow-${VERSION}-win-x64"
-EXTRACT_ARM="deskflow-${VERSION}-win-arm64"
+EXTRACT_X64="deskflow-${VERSION}-win-x64-portable"
+EXTRACT_ARM="deskflow-${VERSION}-win-arm64-portable"
 SEVENZ=$(command -v 7z || command -v 7za || true)
 if [ -n "$SEVENZ" ]; then
   if [ ! -f "$WORK/$ZIP_X64" ]; then

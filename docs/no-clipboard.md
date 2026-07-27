@@ -29,10 +29,20 @@ mistake during a rebase cannot quietly re-enable sharing.
 | `src/lib/server/ClientProxy1_0.cpp` | `grabClipboard()` sends nothing; `getClipboard()` returns false; `recvGrabClipboard()` parses and drops. |
 | `src/lib/server/ClientProxy1_6.cpp` | `setClipboard()` sends nothing; `recvClipboard()` reassembles the chunks and throws the payload away. |
 | `src/lib/server/Server.{h,cpp}` | `m_enableClipboard` is initialised to `false` and the `clipboardSharing` config option can no longer set it; `m_maximumClipboardSize` starts at 0. |
+| `src/lib/deskflow/ClipboardChunk.cpp` | `assemble()` reads each chunk off the stream and drops it without appending to the reassembly buffer. |
 
 Incoming messages are still *parsed* rather than ignored, so a stock Deskflow or
 Barrier peer on the other end cannot desynchronise the connection by sending
 clipboard traffic. It talks, this build listens and forgets.
+
+Nothing is buffered while listening, and that matters. Upstream's
+`ClipboardChunk::assemble()` appends every `DataChunk` to a reassembly buffer
+and only compares the total against the advertised size once `DataEnd` arrives —
+so a peer that streams chunks and never terminates the transfer grows that
+buffer without bound. Discarding at the end of reassembly would have inherited
+that; discarding each chunk as it arrives does not. Per-message size is already
+capped by `PROTOCOL_MAX_STRING_LENGTH` in `ProtocolUtil`, so with no
+accumulation there is no growth path left.
 
 ### 2. Screen abstraction — the shared entry points are no-ops
 
@@ -62,10 +72,21 @@ This is the layer that makes the claim checkable rather than merely true.
 - **Linux/Wayland** — `EiScreen` never creates a `WlClipboardCollection`, so
   `wl-copy` and `wl-paste` are never spawned.
 
-On Linux the class implementations are still compiled (they are large and
-X11-specific, and Linux is not a target platform for this fork's packages); they
-are simply never instantiated. The symbol-level guarantee below is enforced for
-the Windows and macOS builds, which are the ones shipped.
+> [!WARNING]
+> **The Linux guarantee is weaker than the Windows and macOS one.** There, the
+> clipboard class implementations are still compiled — they are large and
+> toolkit-specific — and are simply never instantiated. So no clipboard data
+> can move (layers 1 and 2 are platform-independent and cover Linux fully), but
+> the *binaries do still contain* X11 selection and Wayland clipboard code, and
+> the symbol check below is **not** run for Linux artifacts even though CI
+> publishes deb/rpm/flatpak packages.
+>
+> If Linux needs the same auditable guarantee, the options are, in increasing
+> order of effort: stop publishing Linux artifacts; extend the CI symbol check
+> to Linux and accept that it will fail until the back-ends are stubbed; or
+> stub `XWindowsClipboard` and the Wayland back-end the same way as Windows and
+> macOS. Until one of those is done, do not repeat the Windows/macOS wording
+> about Linux builds.
 
 ### 4. The GUI
 
@@ -110,6 +131,35 @@ behaviour:
 5. Optionally, run a stock Deskflow on one side and this build on the other.
    The connection must stay up and stay usable; the log on the deskflow-nc side
    shows `discarded clipboard ... (clipboard sharing not built in)`.
+
+## Upstream base and known CVEs
+
+**Unresolved, and blocking any release.** This branch is based on `v1.26.0`
+(tagged 2026-02-16), the newest upstream *release*. Two privilege-escalation
+fixes landed on upstream `master` after that tag, and no release has been cut
+containing them:
+
+| Commit | Issue |
+| --- | --- |
+| `e7040a1f8` | CVE-2026-41477 — the Windows daemon runs as SYSTEM and exposes a `QLocalServer` with `WorldAccessOption`; any local user could send `command=<anything>` plus `elevate=yes` and have it executed with an elevated token. Upstream removed the IPC command mechanism entirely. |
+| `5c480ca51` | Companion fix — switch commands now run as the normal user on Windows. |
+
+For a fork whose whole purpose is passing a security review, shipping these is
+not an option. The three ways out, with what each costs:
+
+1. **Rebase onto upstream `master`.** Gets both fixes plus 328 other commits.
+   The base is unreleased, and the clipboard patch needs real rework: upstream
+   replaced the Wayland `WlClipboard` back-end with `EiClipboard` and
+   `PortalClipboard`, and refactored `ServerConfigDialog`, so several guards
+   move. A trial rebase conflicts in `OSXScreen.mm`, `ClientProxy1_6.cpp` and
+   `ServerConfigDialog.cpp`.
+2. **Cherry-pick the two fixes onto `v1.26.0`.** Tried, and it is *not* clean —
+   6 of 10 files conflict, including a delete/modify on `ipc/IpcServer.h`,
+   because the fix depends on intervening refactors. Landing it would mean
+   hand-writing a bespoke security patch that cannot be diffed against
+   upstream's. Not recommended.
+3. **Wait for upstream to tag a release containing the fixes** and branch from
+   that. Cheapest and safest, but the timing is not ours to control.
 
 ## Keeping up with upstream
 

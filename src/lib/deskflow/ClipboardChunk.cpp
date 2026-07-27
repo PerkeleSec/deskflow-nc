@@ -100,6 +100,30 @@ TransferState ClipboardChunk::assemble(
     return Error;
   }
 
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // Clipboard sharing is compiled out. The message above is still read so the
+  // connection stays in sync with a stock peer, but nothing is accumulated:
+  // upstream only checks the total against s_expectedSize when DataEnd
+  // arrives, so a peer that streams DataChunk messages and never terminates
+  // them can grow dataCached without bound. Since this build discards the
+  // payload anyway, the safe thing is to never buffer a byte of it.
+  dataCached.clear();
+
+  switch (mark) {
+  case ChunkType::DataStart:
+    LOG_DEBUG("ignoring clipboard transfer, clipboard sharing not built in");
+    return Started;
+  case ChunkType::DataChunk:
+    return InProgress;
+  case ChunkType::DataEnd:
+    return (id >= kClipboardEnd) ? Error : Finished;
+  default:
+    break;
+  }
+
+  LOG_ERR("clipboard transmission failed: unknown error");
+  return Error;
+#else
   if (mark == ChunkType::DataStart) {
     bool ok = false;
     const auto expected = QString::fromStdString(data).toULongLong(&ok);
@@ -159,6 +183,7 @@ TransferState ClipboardChunk::assemble(
   LOG_ERR("unknown clipboard chunk mark");
   reset();
   return Error;
+#endif
 }
 
 void ClipboardChunk::send(deskflow::IStream *stream, void *data)
