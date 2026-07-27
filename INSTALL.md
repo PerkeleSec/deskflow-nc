@@ -44,15 +44,21 @@ or inject input. Open **System Settings → Privacy & Security** and add
 `Deskflow.app` under both **Accessibility** and **Input Monitoring**. This is
 the same requirement as upstream Deskflow; nothing about it changes here.
 
-Upgrade and removal:
+Upgrade:
 
 ```bash
 brew upgrade --cask PerkeleSec/nc/deskflow-nc
 ```
 
+Uninstall, including settings:
+
 ```bash
-brew uninstall --cask deskflow-nc
+brew uninstall --zap --cask deskflow-nc
 ```
+
+Drop `--zap` to keep `~/Library/Deskflow` for a later reinstall. Note that the
+Accessibility and Input Monitoring grants survive either way — see
+[INSTALL-DETAILED.md](INSTALL-DETAILED.md#uninstalling) for clearing those.
 
 ### Without Homebrew
 
@@ -112,11 +118,20 @@ will stop with a message if it is missing. Install it first on a clean machine:
 winget install --id Microsoft.VCRedist.2015+.x64 --silent --accept-package-agreements
 ```
 
-Uninstall:
+Uninstall — find the product code, then pass it to msiexec. Do not reach for
+`Get-CimInstance Win32_Product`: enumerating that class triggers a consistency
+check and reconfiguration pass across every installed MSI on the machine.
 
 ```powershell
-Get-CimInstance Win32_Product -Filter "Name LIKE 'Deskflow%'" | Invoke-CimMethod -MethodName Uninstall
+Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall','HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall' -ErrorAction SilentlyContinue | Get-ItemProperty | Where-Object { $_.DisplayName -like 'Deskflow*' } | Select-Object DisplayName, DisplayVersion, PSChildName
 ```
+
+```powershell
+Start-Process msiexec -ArgumentList "/x {PRODUCT-CODE-HERE} /qn /norestart" -Wait -Verb RunAs
+```
+
+See [INSTALL-DETAILED.md](INSTALL-DETAILED.md#uninstalling) for removing the
+service, firewall rule and leftover settings.
 
 > [!NOTE]
 > The MSI shares its upgrade code with upstream Deskflow, so installing it
