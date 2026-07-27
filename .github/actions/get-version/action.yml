@@ -6,7 +6,13 @@ runs:
 
   steps:
     - run: |
-        echo "DESKFLOW_VERSION=$(git describe --long | sed 's/-/./g;s/v//g'  | grep -o '^[0-9]*.[0-9]*.[0-9]*.[0-9]*')">> $GITHUB_ENV
+        # deskflow-nc: fork releases are tagged v<upstream>-nc<n> (e.g. v1.26.0-nc1).
+        # DESKFLOW_VERSION must stay a plain four-part numeric version because it
+        # feeds package metadata, so the -nc<n> part is stripped here. The full
+        # tag is kept in DESKFLOW_PACKAGE_VERSION, which is what ends up in the
+        # artifact filenames.
+        DESCRIBE=$(git describe --long | sed -E 's/-nc[0-9]+//')
+        echo "DESKFLOW_VERSION=$(echo "$DESCRIBE" | sed 's/-/./g;s/v//g'  | grep -o '^[0-9]*.[0-9]*.[0-9]*.[0-9]*')">> $GITHUB_ENV
         if [[ "$GITHUB_REF" == *"tags/v"* ]]; then
           echo "DESKFLOW_PACKAGE_VERSION=$(echo $GITHUB_REF | sed 's,refs/tags/v,,g')">> $GITHUB_ENV
         else

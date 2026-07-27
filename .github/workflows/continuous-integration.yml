@@ -6,7 +6,7 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [master]
+    branches: [no-clipboard, master]
     tags:
       - "v*"
   pull_request:
@@ -19,7 +19,9 @@ env:
   GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   PACKAGE_PREFIX: "deskflow"
   PACKAGE_PATH: ./dist
-  CMAKE_CONFIGURE: "cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DSKIP_BUILD_TESTS=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+  # -DDESKFLOW_ENABLE_CLIPBOARD=OFF is already the default in this fork; it is
+  # spelled out here so the build log states it for anyone auditing a release.
+  CMAKE_CONFIGURE: "cmake -Bbuild -DCMAKE_BUILD_TYPE=Release -DSKIP_BUILD_TESTS=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -DDESKFLOW_ENABLE_CLIPBOARD=OFF"
 
 jobs:
   # Quality gate to allow PR merge, used in the branch protection rules.
@@ -296,6 +298,45 @@ jobs:
             cd ..
           fi
 
+      # deskflow-nc gate: the shipped binaries must not reference a single OS
+      # clipboard API. This is what makes "clipboard support is compiled out"
+      # an auditable claim rather than a promise. See doc/no-clipboard.md.
+      - name: Verify no clipboard symbols (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          for exe in build/bin/*.exe; do
+            echo "--- $exe"
+            imports=$(dumpbin //imports "$exe" | grep -i clipboard || true)
+            if [ -n "$imports" ]; then
+              echo "FAIL: clipboard imports found in $exe"
+              echo "$imports"
+              found=1
+            fi
+          done
+          if [ "$found" -ne 0 ]; then exit 1; fi
+          echo "OK: no clipboard imports in any binary"
+
+      - name: Verify no clipboard symbols (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          while IFS= read -r bin; do
+            echo "--- $bin"
+            syms=$(nm -u "$bin" 2>/dev/null | grep -iE 'pasteboard|NSPboard|clipboard' || true)
+            if [ -n "$syms" ]; then
+              echo "FAIL: clipboard symbols found in $bin"
+              echo "$syms"
+              found=1
+            fi
+          done < <(find build/bin -type f -perm +111 ! -name '*.dylib')
+          if [ "$found" -ne 0 ]; then exit 1; fi
+          echo "OK: no clipboard symbols in any binary"
+
       - name: Check for unexpected repo changes
         shell: bash
         run: |
@@ -472,12 +513,19 @@ jobs:
             deskflow-*
             sums.txt
 
-      - name: Update Homebrewtap
+      # deskflow-nc: upstream pushes to deskflow/homebrew-tap and to winget here.
+      # This fork publishes through its own tap and Scoop bucket instead, and
+      # winget is skipped entirely (it requires Microsoft review of a public
+      # package, which is not what an internal build wants). Set the NC_TAP_TOKEN
+      # secret to a PAT with repo scope on your tap/bucket repos to automate the
+      # bump; without it the step is skipped and you run
+      # packaging/update-manifests.sh by hand.
+      - name: Bump packaging manifests
+        if: ${{ contains(github.ref, '/tags/v') && secrets.NC_TAP_TOKEN != '' }}
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.NC_TAP_TOKEN }}
         run: |
-          curl -L -X POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ secrets.DF_TAP_TOKEN }}" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          https://api.github.com/repos/deskflow/homebrew-tap/dispatches \
-          -d '{"event_type":"update_tap"}'
+          ./packaging/update-manifests.sh \
+            --version "${{env.DESKFLOW_PACKAGE_VERSION}}" \
+            --push
