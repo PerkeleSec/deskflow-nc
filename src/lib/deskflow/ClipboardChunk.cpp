@@ -102,27 +102,72 @@ TransferState ClipboardChunk::assemble(
 
 #ifdef DESKFLOW_NO_CLIPBOARD
   // Clipboard sharing is compiled out. The message above is still read so the
-  // connection stays in sync with a stock peer, but the payload is dropped
-  // here rather than reassembled. Upstream bounds the reassembly buffer
-  // against the declared size, which is sound; a build that discards the
-  // result regardless can do better by never buffering a byte of it, so
-  // there is no accumulation for a peer to drive at all.
-  (void)maxDataSize;
-  reset();
+  // connection stays in sync with a stock peer, but the payload is counted
+  // rather than reassembled -- dataCached never grows, so there is no
+  // accumulation for a peer to drive. Every validation upstream performs is
+  // kept: out-of-order chunks, over-long transfers and size mismatches are all
+  // still errors, because a build that stops looking at malformed input is a
+  // worse place to be than one that buffers it.
+  if (mark == ChunkType::DataStart) {
+    bool ok = false;
+    const auto expected = QString::fromStdString(data).toULongLong(&ok);
+    if (!ok || expected > std::numeric_limits<size_t>::max()) {
+      LOG_ERR("clipboard invalid size header: %s", data.c_str());
+      reset();
+      return Error;
+    }
 
-  switch (mark) {
-  case ChunkType::DataStart:
-    LOG_DEBUG("ignoring clipboard transfer, clipboard sharing not built in");
+    clearCachedData(dataCached);
+    state.expectedSize = static_cast<size_t>(expected);
+    state.receivedSize = 0;
+    state.active = true;
+
+    if (state.expectedSize > maxDataSize) {
+      LOG_ERR("clipboard size exceeds limit, size: %zu, limit: %zu", state.expectedSize, maxDataSize);
+      reset();
+      return Error;
+    }
+
+    LOG_DEBUG("discarding clipboard transfer of %zu bytes, clipboard sharing not built in", state.expectedSize);
     return Started;
-  case ChunkType::DataChunk:
+  } else if (mark == ChunkType::DataChunk) {
+    if (!state.active) {
+      LOG_ERR("clipboard data chunk before start");
+      reset();
+      return Error;
+    }
+
+    if (wouldExceed(state.receivedSize, data.size(), state.expectedSize)) {
+      LOG_ERR(
+          "clipboard size exceeds declared, size: %zu, declared: %zu", state.receivedSize + data.size(),
+          state.expectedSize
+      );
+      reset();
+      return Error;
+    }
+
+    // counted, not kept
+    state.receivedSize += data.size();
     return InProgress;
-  case ChunkType::DataEnd:
+  } else if (mark == ChunkType::DataEnd) {
+    if (!state.active) {
+      LOG_ERR("clipboard end chunk before start");
+      reset();
+      return Error;
+    }
+
+    state.active = false;
+
+    if (state.expectedSize != state.receivedSize) {
+      LOG_ERR("corrupted clipboard data, expected size=%zu actual size=%zu", state.expectedSize, state.receivedSize);
+      reset();
+      return Error;
+    }
     return Finished;
-  default:
-    break;
   }
 
   LOG_ERR("unknown clipboard chunk mark");
+  reset();
   return Error;
 #else
   if (mark == ChunkType::DataStart) {

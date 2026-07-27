@@ -1098,7 +1098,7 @@ void Server::processOptions()
       // the option is still parsed so old config files keep loading, but it
       // cannot switch clipboard sharing back on: it is not in this build
       if (value) {
-        LOG_NOTE("ignoring clipboardSharing option: clipboard sharing is not built in");
+        LOG_INFO("ignoring clipboardSharing option: clipboard sharing is not built in");
       }
 #else
       m_enableClipboard = value;
@@ -1110,7 +1110,7 @@ void Server::processOptions()
 #ifdef DESKFLOW_NO_CLIPBOARD
       // likewise: the size limit stays pinned at 0
       if (value > 0) {
-        LOG_NOTE("ignoring clipboardSharingSize option: clipboard sharing is not built in");
+        LOG_INFO("ignoring clipboardSharingSize option: clipboard sharing is not built in");
       }
 #else
       if (value <= 0) {

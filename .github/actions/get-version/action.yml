@@ -14,8 +14,12 @@ runs:
         # This step runs under `bash -e -o pipefail`, so every stage has to be
         # allowed to fail softly: a checkout with no reachable tag must produce
         # a warning and a fallback, not abort the whole build.
-        DESCRIBE=$(git describe --long --tags 2>/dev/null | sed -E 's/-nc[0-9]+//' || true)
-        VERSION=$(echo "$DESCRIBE" | sed 's/-/./g;s/v//g' | grep -o '^[0-9]*.[0-9]*.[0-9]*.[0-9]*' || true)
+        # --match is essential: this fork carries upstream's rolling "continuous"
+        # tag, which git describe would otherwise pick as the nearest tag. The
+        # dots in the pattern must be escaped too -- unescaped they are "any
+        # character", so "continuous-11-gabc1234" parses as the version "con".
+        DESCRIBE=$(git describe --long --tags --match 'v[0-9]*' 2>/dev/null | sed -E 's/-nc[0-9]+//' || true)
+        VERSION=$(echo "$DESCRIBE" | sed 's/-/./g;s/v//g' | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' || true)
         if [ -z "$VERSION" ]; then
           echo "::warning::no reachable tag, falling back to 0.0.0.0 - push the upstream release tags to this fork so git describe works"
           VERSION=0.0.0.0

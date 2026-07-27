@@ -244,7 +244,13 @@ void ClipboardChunksTests::assembleAllowsDataAtExpectedSizeAndLimit()
   QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 4), TransferState::InProgress);
   QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 4), TransferState::Finished);
 
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // the transfer is still tracked and validated, but the payload is counted
+  // rather than reassembled, so nothing reaches the buffer
+  QVERIFY(cached.empty());
+#else
   QCOMPARE(cached, std::string("ABCD"));
+#endif
   QCOMPARE(id, static_cast<ClipboardID>(0));
   QCOMPARE(seq, static_cast<uint32_t>(7));
   QCOMPARE(ClipboardChunk::getExpectedSize(state), static_cast<size_t>(4));
@@ -282,6 +288,61 @@ void ClipboardChunksTests::assembleRejectsExpectedSizeBeyondLimit()
   QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 4), TransferState::Error);
   QVERIFY(cached.empty());
   QCOMPARE(ClipboardChunk::getExpectedSize(state), static_cast<size_t>(0));
+  QVERIFY(!state.active);
+}
+
+// The three cases below hold identically with and without clipboard support.
+// They exist because deskflow-nc discards the payload, and a build that stops
+// reassembling data is exactly the sort of build where out-of-order or
+// truncated transfers could quietly stop being rejected.
+
+void ClipboardChunksTests::assembleRejectsChunkBeforeStart()
+{
+  MemoryStream stream;
+  stream.push(encodeClipboardMsg(0, 7, ChunkType::DataChunk, "AB"));
+
+  std::string cached;
+  ClipboardID id = kClipboardEnd;
+  uint32_t seq = 0;
+  ClipboardChunkAssemblyState state;
+
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 1024), TransferState::Error);
+  QVERIFY(cached.empty());
+  QVERIFY(!state.active);
+}
+
+void ClipboardChunksTests::assembleRejectsEndBeforeStart()
+{
+  MemoryStream stream;
+  stream.push(encodeClipboardMsg(0, 7, ChunkType::DataEnd, ""));
+
+  std::string cached;
+  ClipboardID id = kClipboardEnd;
+  uint32_t seq = 0;
+  ClipboardChunkAssemblyState state;
+
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 1024), TransferState::Error);
+  QVERIFY(cached.empty());
+  QVERIFY(!state.active);
+}
+
+void ClipboardChunksTests::assembleRejectsShortTransfer()
+{
+  MemoryStream stream;
+  stream.push(encodeClipboardMsg(0, 7, ChunkType::DataStart, "4"));
+  stream.push(encodeClipboardMsg(0, 7, ChunkType::DataChunk, "AB"));
+  stream.push(encodeClipboardMsg(0, 7, ChunkType::DataEnd, ""));
+
+  std::string cached;
+  ClipboardID id = kClipboardEnd;
+  uint32_t seq = 0;
+  ClipboardChunkAssemblyState state;
+
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 1024), TransferState::Started);
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 1024), TransferState::InProgress);
+  // declared four bytes, sent two: must not be reported as a completed transfer
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 1024), TransferState::Error);
+  QVERIFY(cached.empty());
   QVERIFY(!state.active);
 }
 

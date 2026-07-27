@@ -23,6 +23,12 @@ struct ClipboardChunkAssemblyState
 {
   size_t expectedSize = 0;
   bool active = false;
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard-free builds discard the payload instead of reassembling it, so
+  // the running byte count has to live here rather than in the data buffer --
+  // the declared-size checks still need something to compare against
+  size_t receivedSize = 0;
+#endif
 };
 
 class ClipboardChunk : public Chunk
