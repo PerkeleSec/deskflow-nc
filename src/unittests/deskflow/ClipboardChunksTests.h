@@ -19,7 +19,7 @@ private Q_SLOTS:
   void endFormatData();
   void assembleAllowsDataAtExpectedSizeAndLimit();
   void assembleRejectsDataBeyondExpectedSize();
-  void assembleRejectsExpectedSizeBeyondLimit();
+  void assembleAppliesStorageLimitOnlyWhenStoring();
   void assembleRejectsChunkBeforeStart();
   void assembleRejectsEndBeforeStart();
   void assembleRejectsShortTransfer();

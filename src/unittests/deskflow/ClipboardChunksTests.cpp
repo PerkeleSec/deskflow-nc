@@ -275,7 +275,12 @@ void ClipboardChunksTests::assembleRejectsDataBeyondExpectedSize()
   QVERIFY(!state.active);
 }
 
-void ClipboardChunksTests::assembleRejectsExpectedSizeBeyondLimit()
+// maxDataSize is a storage policy, so whether a declared size beyond it is an
+// error depends on whether this build stores anything. With clipboard support
+// it is rejected; without it the transfer is accepted and discarded, because
+// rejecting would drop the peer's connection. See the comment in
+// ClipboardChunk::assemble().
+void ClipboardChunksTests::assembleAppliesStorageLimitOnlyWhenStoring()
 {
   MemoryStream stream;
   stream.push(encodeClipboardMsg(0, 7, ChunkType::DataStart, "8"));
@@ -285,10 +290,17 @@ void ClipboardChunksTests::assembleRejectsExpectedSizeBeyondLimit()
   uint32_t seq = 0;
   ClipboardChunkAssemblyState state;
 
+#ifdef DESKFLOW_NO_CLIPBOARD
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 4), TransferState::Started);
+  QCOMPARE(ClipboardChunk::getExpectedSize(state), static_cast<size_t>(8));
+  QVERIFY(state.active);
+  QVERIFY(cached.empty());
+#else
   QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 4), TransferState::Error);
   QVERIFY(cached.empty());
   QCOMPARE(ClipboardChunk::getExpectedSize(state), static_cast<size_t>(0));
   QVERIFY(!state.active);
+#endif
 }
 
 // The three cases below hold identically with and without clipboard support.
