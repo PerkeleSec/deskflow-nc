@@ -487,8 +487,19 @@ jobs:
 
   release:
     needs: ci-passed
-    if: (github.ref == 'refs/heads/no-clipboard') || (contains(github.ref, '/tags/v'))
+    # deskflow-nc: tags only. Upstream also publishes a rolling "continuous"
+    # prerelease from every push to its default branch; this fork does not,
+    # because a downloadable build that nobody has vetted is exactly what the
+    # README tells people not to install. The continuous steps below are left
+    # in place to keep the diff small -- they simply never fire.
+    if: contains(github.ref, '/tags/v')
     runs-on: ubuntu-latest
+
+    # A new repository's GITHUB_TOKEN is read-only by default, so creating a
+    # release returns 403 "Resource not accessible by integration". Upstream
+    # does not need this line because its org enables write by default.
+    permissions:
+      contents: write
 
     # the secrets context is not available in a step-level `if`, so the token is
     # surfaced here to let the manifest bump skip itself when it is not set

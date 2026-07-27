@@ -40,9 +40,25 @@ Nothing is buffered while listening, and that matters. Upstream's
 and only compares the total against the advertised size once `DataEnd` arrives —
 so a peer that streams chunks and never terminates the transfer grows that
 buffer without bound. Discarding at the end of reassembly would have inherited
-that; discarding each chunk as it arrives does not. Per-message size is already
-capped by `PROTOCOL_MAX_STRING_LENGTH` in `ProtocolUtil`, so with no
-accumulation there is no growth path left.
+that; counting each chunk as it arrives and storing none does not. Per-message
+size is already capped by `PROTOCOL_MAX_STRING_LENGTH` in `ProtocolUtil`, so
+with no accumulation there is no growth path left.
+
+Every *structural* check upstream performs is kept — a `DataChunk` or `DataEnd`
+without a preceding `DataStart`, a transfer longer than declared, or one that
+ends short are all still errors. A build that discards payloads is exactly
+where validation could rot unnoticed, so `ClipboardChunksTests` covers each of
+those cases in both configurations.
+
+One check is deliberately *not* applied in clipboard-free builds:
+`maxDataSize`. That parameter is a storage policy — how much clipboard data
+this side will keep — and this build pins it to zero because it keeps none.
+Enforcing it as a receive limit would turn every non-empty transfer from a
+stock peer into an `Error`, which the callers escalate: the server drains the
+whole stream (`ClientProxy1_0::handleData`), the client calls
+`requestDisconnect()`. That would both break the interop guarantee above and
+hand any connected peer a one-message denial of service. Nothing is allocated
+from the declared size, so not capping it costs nothing.
 
 ### 2. Screen abstraction — the shared entry points are no-ops
 

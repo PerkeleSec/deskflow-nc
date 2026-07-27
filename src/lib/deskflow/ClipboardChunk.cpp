@@ -104,10 +104,23 @@ TransferState ClipboardChunk::assemble(
   // Clipboard sharing is compiled out. The message above is still read so the
   // connection stays in sync with a stock peer, but the payload is counted
   // rather than reassembled -- dataCached never grows, so there is no
-  // accumulation for a peer to drive. Every validation upstream performs is
-  // kept: out-of-order chunks, over-long transfers and size mismatches are all
-  // still errors, because a build that stops looking at malformed input is a
-  // worse place to be than one that buffers it.
+  // accumulation for a peer to drive. Every structural validation upstream
+  // performs is kept: out-of-order chunks, over-long transfers and size
+  // mismatches are all still errors, because a build that stops looking at
+  // malformed input is a worse place to be than one that buffers it.
+  //
+  // maxDataSize is deliberately NOT applied here. It is a *storage* policy --
+  // how much clipboard data this side is willing to keep -- and this build
+  // pins it to zero precisely because it keeps none. Treating it as a receive
+  // limit would make every non-empty transfer from a stock peer an Error,
+  // which the callers escalate to dropping the connection: the server drains
+  // the whole stream, the client calls requestDisconnect(). That would break
+  // the documented guarantee that such traffic is consumed and discarded with
+  // the link left usable, and would hand any connected peer a one-message
+  // disconnect. Nothing is allocated from expectedSize, so declining to cap it
+  // costs no memory.
+  (void)maxDataSize;
+
   if (mark == ChunkType::DataStart) {
     bool ok = false;
     const auto expected = QString::fromStdString(data).toULongLong(&ok);
@@ -121,12 +134,6 @@ TransferState ClipboardChunk::assemble(
     state.expectedSize = static_cast<size_t>(expected);
     state.receivedSize = 0;
     state.active = true;
-
-    if (state.expectedSize > maxDataSize) {
-      LOG_ERR("clipboard size exceeds limit, size: %zu, limit: %zu", state.expectedSize, maxDataSize);
-      reset();
-      return Error;
-    }
 
     LOG_DEBUG("discarding clipboard transfer of %zu bytes, clipboard sharing not built in", state.expectedSize);
     return Started;

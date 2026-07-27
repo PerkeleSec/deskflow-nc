@@ -23,6 +23,7 @@ private Q_SLOTS:
   void assembleRejectsChunkBeforeStart();
   void assembleRejectsEndBeforeStart();
   void assembleRejectsShortTransfer();
+  void assembleDiscardsWithZeroPolicyLimit();
 
 private:
   Log m_log;

@@ -346,4 +346,35 @@ void ClipboardChunksTests::assembleRejectsShortTransfer()
   QVERIFY(!state.active);
 }
 
+// A clipboard-free server pins its clipboard size policy to zero, and that zero
+// is what reaches assemble() as maxDataSize. If it were treated as a receive
+// limit, one non-empty DataStart from a stock peer would be an Error, and the
+// callers escalate that to dropping the connection. This is the regression
+// test for that: the transfer must complete and discard, not fail.
+void ClipboardChunksTests::assembleDiscardsWithZeroPolicyLimit()
+{
+  MemoryStream stream;
+  stream.push(encodeClipboardMsg(0, 7, ChunkType::DataStart, "4"));
+  stream.push(encodeClipboardMsg(0, 7, ChunkType::DataChunk, "ABCD"));
+  stream.push(encodeClipboardMsg(0, 7, ChunkType::DataEnd, ""));
+
+  std::string cached;
+  ClipboardID id = kClipboardEnd;
+  uint32_t seq = 0;
+  ClipboardChunkAssemblyState state;
+
+#ifdef DESKFLOW_NO_CLIPBOARD
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 0), TransferState::Started);
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 0), TransferState::InProgress);
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 0), TransferState::Finished);
+  QVERIFY(cached.empty());
+  QVERIFY(!state.active);
+#else
+  // with clipboard support built in, zero really is a storage limit
+  QCOMPARE(ClipboardChunk::assemble(&stream, cached, id, seq, state, 0), TransferState::Error);
+  QVERIFY(cached.empty());
+  QVERIFY(!state.active);
+#endif
+}
+
 QTEST_MAIN(ClipboardChunksTests)
