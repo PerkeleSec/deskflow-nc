@@ -10,6 +10,8 @@ on:
     tags:
       - "v*"
   pull_request:
+  # deskflow-nc: lets a rebase be re-verified without pushing a tag
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
