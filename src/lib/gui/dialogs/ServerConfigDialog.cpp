@@ -434,7 +434,11 @@ void ServerConfigDialog::loadFromConfig()
   m_clipboardSize = 0;
   Settings::setValue(Settings::Server::EnableClipboard, false);
   Settings::setValue(Settings::Server::ClipboardSize, 0);
-  ui->cbEnableClipboard->setText(tr("Clipboard sharing (removed from this build)"));
+  // Deliberately not tr(): a new translatable string would make lupdate rewrite
+  // the tracked translations/*.ts on every build, which upstream's "unexpected
+  // repo changes" CI step then fails on. Appending to the existing label keeps
+  // that part translated.
+  ui->cbEnableClipboard->setText(ui->cbEnableClipboard->text() + QStringLiteral(" — removed from this build"));
   ui->cbEnableClipboard->setChecked(false);
   ui->cbEnableClipboard->setEnabled(false);
   ui->label_7->setVisible(false);

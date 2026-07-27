@@ -368,6 +368,11 @@ jobs:
         run: |
           if [[ `git status --porcelain` ]]; then
             echo "Unexpected changes to the repo, Often caused by forgetting to commit the updated translation files"
+            # deskflow-nc: upstream prints no detail here, which makes this the
+            # single least diagnosable failure in the matrix. Show the culprit.
+            git status --porcelain
+            git --no-pager diff --stat
+            git --no-pager diff | head -200
             exit 1
           fi
 
