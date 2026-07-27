@@ -21,9 +21,11 @@ ClientProxy1_6::ClientProxy1_6(const std::string &name, deskflow::IStream *strea
     : ClientProxy1_5(name, stream, server, events),
       m_events(events)
 {
+#ifndef DESKFLOW_NO_CLIPBOARD
   m_events->addHandler(EventTypes::ClipboardSending, this, [this](const auto &e) {
     ClipboardChunk::send(getStream(), e.getDataObject());
   });
+#endif
 }
 
 ClientProxy1_6::~ClientProxy1_6()
@@ -33,6 +35,11 @@ ClientProxy1_6::~ClientProxy1_6()
 
 void ClientProxy1_6::setClipboard(ClipboardID id, const IClipboard *clipboard)
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never send clipboard data to a client
+  (void)id;
+  (void)clipboard;
+#else
   // ignore if this clipboard is already clean
   if (m_clipboard[id].m_dirty) {
     // this clipboard is now clean
@@ -46,6 +53,7 @@ void ClientProxy1_6::setClipboard(ClipboardID id, const IClipboard *clipboard)
 
     StreamChunker::sendClipboard(data, size, id, 0, m_events, this);
   }
+#endif
 }
 
 bool ClientProxy1_6::recvClipboard()
@@ -62,6 +70,11 @@ bool ClientProxy1_6::recvClipboard()
     size_t size = ClipboardChunk::getExpectedSize(m_clipboardChunkState);
     LOG_DEBUG("receiving clipboard %d size=%zu", id, size);
   } else if (r == TransferState::Finished) {
+#ifdef DESKFLOW_NO_CLIPBOARD
+    // assemble() consumed the chunks without buffering them, so nothing is
+    // cached on the server and no other screen is notified
+    LOG((CLOG_DEBUG "discarded client \"%s\" clipboard %d (clipboard sharing not built in)", getName().c_str(), id));
+#else
     LOG(
         (CLOG_DEBUG "received client \"%s\" clipboard %d seqnum=%d, size=%zu", getName().c_str(), id, seq,
          m_clipboardDataCached.size())
@@ -77,6 +90,7 @@ bool ClientProxy1_6::recvClipboard()
     info->m_id = id;
     info->m_sequenceNumber = seq;
     m_events->addEvent(Event(EventTypes::ClipboardChanged, getEventTarget(), info));
+#endif
   } else if (r == TransferState::Error) {
     return false;
   }

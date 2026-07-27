@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: (C) 2025 Deskflow Developers
 # SPDX-License-Identifier: MIT
 
-# deskflow-nc: MSWindowsClipboard/OSXClipboard are replaced by stubs unless
-# clipboard sharing is enabled, so their behavioural tests only make sense then.
-# The platform-independent Clipboard/ClipboardChunk tests still run either way.
+# deskflow-nc: the MSWindows/OSX/XWindows clipboard back-ends are replaced by
+# stubs unless clipboard sharing is enabled, so their behavioural tests only
+# make sense then. The platform-independent Clipboard/ClipboardChunk tests
+# still run either way.
 if (WIN32)
   if(DESKFLOW_ENABLE_CLIPBOARD)
     create_test(
@@ -32,7 +33,7 @@ elseif(APPLE)
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/platform"
   )
 elseif(UNIX)
-  if (BUILD_X11_SUPPORT)
+  if (BUILD_X11_SUPPORT AND DESKFLOW_ENABLE_CLIPBOARD)
     create_test(
       NAME XWindowsClipboardTests
       DEPENDS platform

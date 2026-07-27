@@ -43,9 +43,11 @@ ServerProxy::ServerProxy(Client *client, deskflow::IStream *stream, IEventQueue 
   m_events->addHandler(EventTypes::StreamInputReady, m_stream->getEventTarget(), [this](const auto &) {
     handleData();
   });
+#ifndef DESKFLOW_NO_CLIPBOARD
   m_events->addHandler(EventTypes::ClipboardSending, this, [this](const auto &e) {
     ClipboardChunk::send(m_stream, e.getDataObject());
   });
+#endif
 
   // send heartbeat
   setKeepAliveRate(kKeepAliveRate);
@@ -367,17 +369,29 @@ void ServerProxy::onInfoChanged()
 
 bool ServerProxy::onGrabClipboard(ClipboardID id)
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never announce a clipboard grab
+  (void)id;
+  return false;
+#else
   LOG_VERBOSE("sending clipboard %d changed", id);
   ProtocolUtil::writef(m_stream, kMsgCClipboard, id, m_seqNum);
   return true;
+#endif
 }
 
 void ServerProxy::onClipboardChanged(ClipboardID id, const IClipboard *clipboard)
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never put clipboard data on the wire
+  (void)id;
+  (void)clipboard;
+#else
   std::string data = IClipboard::marshall(clipboard);
   LOG_DEBUG("sending clipboard %d seqnum=%d", id, m_seqNum);
 
   StreamChunker::sendClipboard(data, data.size(), id, m_seqNum, m_events, this);
+#endif
 }
 
 void ServerProxy::flushCompressedMouse()
@@ -554,6 +568,11 @@ void ServerProxy::setClipboard()
     size_t size = ClipboardChunk::getExpectedSize(m_clipboardChunkState);
     LOG_DEBUG("receiving clipboard %d size=%zu", id, size);
   } else if (r == TransferState::Finished) {
+#ifdef DESKFLOW_NO_CLIPBOARD
+    // assemble() consumed the chunks to keep the stream in sync with a stock
+    // peer without buffering them, so there is nothing here to forward
+    LOG_DEBUG("discarded clipboard %d (clipboard sharing not built in)", id);
+#else
     LOG_DEBUG("received clipboard %d size=%zu", id, m_clipboardDataCached.size());
 
     // forward
@@ -564,6 +583,7 @@ void ServerProxy::setClipboard()
     m_clipboardDataCached.shrink_to_fit();
 
     LOG_INFO("clipboard was updated");
+#endif
   } else if (r == TransferState::Error) {
     requestDisconnect("invalid clipboard data from server");
   }
@@ -582,8 +602,10 @@ void ServerProxy::grabClipboard()
     return;
   }
 
+#ifndef DESKFLOW_NO_CLIPBOARD
   // forward
   m_client->grabClipboard(id);
+#endif
 }
 
 void ServerProxy::keyDown(uint16_t id, uint16_t mask, uint16_t button, const std::string &lang)

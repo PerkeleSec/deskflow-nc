@@ -67,26 +67,23 @@ This is the layer that makes the claim checkable rather than merely true.
   `src/lib/platform/noclipboard/OSXClipboard.cpp`: no `PasteboardCreate`, no
   `PasteboardCopyItemFlavorData`, and `OSXScreen` no longer runs the one-second
   pasteboard polling timer.
-- **Linux/X11** — `XWindowsScreen` never allocates its `XWindowsClipboard`
-  objects, so no X selection is ever owned, requested or answered.
-- **Linux/Wayland** — `EiScreen` never creates a `WlClipboardCollection`, so
-  `wl-copy` and `wl-paste` are never spawned.
+Linux gets the same treatment, in two parts:
 
-> [!WARNING]
-> **The Linux guarantee is weaker than the Windows and macOS one.** There, the
-> clipboard class implementations are still compiled — they are large and
-> toolkit-specific — and are simply never instantiated. So no clipboard data
-> can move (layers 1 and 2 are platform-independent and cover Linux fully), but
-> the *binaries do still contain* X11 selection and Wayland clipboard code, and
-> the symbol check below is **not** run for Linux artifacts even though CI
-> publishes deb/rpm/flatpak packages.
->
-> If Linux needs the same auditable guarantee, the options are, in increasing
-> order of effort: stop publishing Linux artifacts; extend the CI symbol check
-> to Linux and accept that it will fail until the back-ends are stubbed; or
-> stub `XWindowsClipboard` and the Wayland back-end the same way as Windows and
-> macOS. Until one of those is done, do not repeat the Windows/macOS wording
-> about Linux builds.
+- **X11** — `src/lib/platform/noclipboard/XWindowsClipboard.cpp` replaces the
+  real back-end, so `XSetSelectionOwner`, `XGetSelectionOwner`,
+  `XConvertSelection` and the ICCCM/Motif machinery are gone. `XWindowsScreen`
+  also never constructs one, leaving every `m_clipboard[]` entry null.
+- **Wayland** — upstream already gates every portal clipboard call behind
+  `HAVE_LIBPORTAL_CLIPBOARD`, so the fork simply never defines it (see
+  `src/lib/platform/CMakeLists.txt`). That drops `PortalClipboard.cpp` from the
+  build and disables the call sites in `PortalInputCapture` and
+  `PortalRemoteDesktop` using upstream's own guards. The one ungated call,
+  `xdp_session_request_clipboard()`, is guarded directly — worth noting because
+  it is the call that asks the portal for clipboard *permission*, so this build
+  never requests it and it never appears in the portal prompt.
+
+`EiClipboard` stays compiled: it is a plain in-memory buffer that touches no OS
+API. It is simply never constructed.
 
 ### 4. The GUI
 
@@ -94,15 +91,16 @@ This is the layer that makes the claim checkable rather than merely true.
   shown, unchecked and disabled, relabelled *"Clipboard sharing (removed from
   this build)"* — visible on purpose, so it is obvious the feature is gone
   rather than merely switched off, and so nobody files a ticket about it.
-- The size limit spinner and the Wayland `wl-clipboard` option are hidden.
+- The size limit spinner is hidden, and both stored settings
+  (`Settings::Server::EnableClipboard` and `ClipboardSize`) are pinned off.
 - The About dialog's "copy version info" button is removed. It was the only
   place the GUI wrote to the local clipboard, and keeping it would have put
   `QClipboard` in the import table of a build that advertises the opposite.
 
 ## Verifying a build
 
-CI runs these checks on every Windows and macOS build and fails the job if
-anything matches — see the *Verify no clipboard symbols* steps in
+CI runs these checks on every Windows, macOS and Linux build and fails the job
+if anything matches — see the *Verify no clipboard symbols* steps in
 `.github/workflows/continuous-integration.yml`. To repeat them by hand:
 
 ```bash
@@ -116,7 +114,13 @@ dumpbin /imports build/bin/Deskflow.exe      | findstr /i clipboard
 nm -u build/bin/deskflow-core | grep -i -E 'pasteboard|clipboard'
 ```
 
-Both must print nothing. For comparison, configure with
+```bash
+# Linux -- match the X11 and libportal entry points, since nm -u lists only
+# undefined symbols and internal C++ class names never appear there
+nm -uC build/bin/deskflow-core | grep -iE 'XSetSelectionOwner|XGetSelectionOwner|XConvertSelection|xdp_session_(request|get_selection|set_selection|selection)|clipboard|pasteboard'
+```
+
+All three must print nothing. For comparison, configure with
 `-DDESKFLOW_ENABLE_CLIPBOARD=ON` and the same commands will list
 `GetClipboardData`, `SetClipboardData`, `PasteboardCreate` and friends.
 
@@ -134,43 +138,49 @@ behaviour:
 
 ## Upstream base and known CVEs
 
-**Unresolved, and blocking any release.** This branch is based on `v1.26.0`
-(tagged 2026-02-16), the newest upstream *release*. Two privilege-escalation
-fixes landed on upstream `master` after that tag, and no release has been cut
-containing them:
+**Resolved by rebasing onto upstream `master`.** The branch was originally cut
+from `v1.26.0` (tagged 2026-02-16), the newest upstream *release*. Two
+privilege-escalation fixes landed after that tag, and upstream has still not cut
+a release containing them:
 
 | Commit | Issue |
 | --- | --- |
 | `e7040a1f8` | CVE-2026-41477 — the Windows daemon runs as SYSTEM and exposes a `QLocalServer` with `WorldAccessOption`; any local user could send `command=<anything>` plus `elevate=yes` and have it executed with an elevated token. Upstream removed the IPC command mechanism entirely. |
 | `5c480ca51` | Companion fix — switch commands now run as the normal user on Windows. |
 
-For a fork whose whole purpose is passing a security review, shipping these is
-not an option. The three ways out, with what each costs:
+For a fork whose whole purpose is passing a security review, shipping those was
+not an option. Cherry-picking the two commits onto `v1.26.0` was tried first and
+is *not* clean — 6 of 10 files conflict, including a delete/modify on
+`ipc/IpcServer.h`, because the fix depends on intervening refactors. Landing it
+would have meant hand-writing a bespoke security patch that cannot be diffed
+against upstream's.
 
-1. **Rebase onto upstream `master`.** Gets both fixes plus 328 other commits.
-   The base is unreleased, and the clipboard patch needs real rework: upstream
-   replaced the Wayland `WlClipboard` back-end with `EiClipboard` and
-   `PortalClipboard`, and refactored `ServerConfigDialog`, so several guards
-   move. A trial rebase conflicts in `OSXScreen.mm`, `ClientProxy1_6.cpp` and
-   `ServerConfigDialog.cpp`.
-2. **Cherry-pick the two fixes onto `v1.26.0`.** Tried, and it is *not* clean —
-   6 of 10 files conflict, including a delete/modify on `ipc/IpcServer.h`,
-   because the fix depends on intervening refactors. Landing it would mean
-   hand-writing a bespoke security patch that cannot be diffed against
-   upstream's. Not recommended.
-3. **Wait for upstream to tag a release containing the fixes** and branch from
-   that. Cheapest and safest, but the timing is not ours to control.
+So the branch is now based on upstream `master`, which contains both fixes. Two
+consequences worth being explicit about with a reviewer:
+
+- **The base is an unreleased commit**, not a tagged release. It is what
+  upstream itself publishes as `continuous` prereleases, and this fork's CI
+  exercises it across the full platform matrix, but it carries no upstream
+  release testing.
+- **When upstream tags a release containing the CVE fixes, move to it.** That
+  restores the cleaner "release X plus our patch" story. Until then, record the
+  exact upstream commit each `-nc` tag was built from in the release notes.
+
+Rebasing also brought in upstream's own hardening of `ClipboardChunk::assemble()`
+(per-connection assembly state and a declared-size cap), which converges with
+the layer-1 change described above — this fork keeps its stricter variant that
+buffers nothing at all.
 
 ## Keeping up with upstream
 
-The whole change is roughly 230 added lines across 16 upstream files plus two
-new stub files, and every hunk is inside `#ifdef DESKFLOW_NO_CLIPBOARD` or
+The whole change is a few hundred added lines across the upstream files listed
+above plus three new stub files, and every hunk is inside `#ifdef DESKFLOW_NO_CLIPBOARD` or
 `#ifndef DESKFLOW_NO_CLIPBOARD`. Nothing upstream is deleted or reformatted,
 which is what keeps rebases cheap.
 
 ```bash
 git fetch upstream --tags
-git rebase v1.27.0          # the new upstream release tag
+git rebase upstream/master   # or a release tag, once one carries the CVE fixes
 ```
 
 Conflicts, when they happen, are almost always "upstream edited a function that

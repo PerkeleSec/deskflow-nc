@@ -426,12 +426,27 @@ void ServerConfigDialog::loadFromConfig()
   m_disableLockToComputer = Settings::value(Settings::Server::DisableLockToComputer).toBool();
   ui->cbDisableLockToComputer->setChecked(m_disableLockToComputer);
 
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out. Leave the checkbox visible but dead so
+  // that it reads as removed rather than merely switched off, and make sure
+  // the stored settings say so too.
+  m_enableClipboard = false;
+  m_clipboardSize = 0;
+  Settings::setValue(Settings::Server::EnableClipboard, false);
+  Settings::setValue(Settings::Server::ClipboardSize, 0);
+  ui->cbEnableClipboard->setText(tr("Clipboard sharing (removed from this build)"));
+  ui->cbEnableClipboard->setChecked(false);
+  ui->cbEnableClipboard->setEnabled(false);
+  ui->label_7->setVisible(false);
+  ui->sbClipboardSizeLimit->setVisible(false);
+#else
   m_enableClipboard = Settings::value(Settings::Server::EnableClipboard).toBool();
   ui->cbEnableClipboard->setChecked(m_enableClipboard);
   ui->sbClipboardSizeLimit->setEnabled(m_enableClipboard);
 
   m_clipboardSize = Settings::value(Settings::Server::ClipboardSize).toUInt();
   ui->sbClipboardSizeLimit->setValue(m_clipboardSize);
+#endif
 
   ui->listHotkeys->clear();
   for (const Hotkey &hotkey : std::as_const(serverConfig().hotkeys()))

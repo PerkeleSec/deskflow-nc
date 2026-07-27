@@ -19,12 +19,21 @@ if(UNIX AND NOT APPLE)
   check_symbol_exists(xdp_input_capture_session_get_restore_token "libportal/inputcapture.h" HAVE_IC_RESTORE)
   check_symbol_exists(xdp_session_request_clipboard "libportal/portal-helpers.h;libportal/clipboard.h" HAVE_LP_CLIPBOARD)
   cmake_pop_check_state()
+
+  # deskflow-nc: upstream already gates every portal clipboard call behind
+  # HAVE_LIBPORTAL_CLIPBOARD, so leaving that undefined removes the whole
+  # Wayland clipboard path -- including the xdp_session_request_clipboard
+  # permission request -- without touching those call sites.
+  if(NOT DESKFLOW_ENABLE_CLIPBOARD AND HAVE_LP_CLIPBOARD)
+    message(STATUS "Portal clipboard support available but disabled (clipboard sharing compiled out)")
+    set(HAVE_LP_CLIPBOARD FALSE)
+  endif()
 endif()
 
 # deskflow-nc: pick the real clipboard back-end or the stub one. The stub keeps
 # the same class interface so the screen sources compile unchanged, but it does
 # not reference a single OS clipboard API, which is what makes the "no clipboard
-# symbols in the binary" check in doc/no-clipboard.md meaningful.
+# symbols in the binary" check in docs/no-clipboard.md meaningful.
 if(DESKFLOW_ENABLE_CLIPBOARD)
   set(NC_CLIPBOARD_DIR ".")
 else()
@@ -135,20 +144,8 @@ elseif(UNIX)
   if (BUILD_X11_SUPPORT)
     configure_file(XWindowsConfig.h.in XWindowsConfig.h @ONLY)
     list(APPEND PLATFORM_SOURCES
-      XWindowsClipboard.cpp
+      ${NC_CLIPBOARD_DIR}/XWindowsClipboard.cpp
       XWindowsClipboard.h
-      XWindowsClipboardAnyBitmapConverter.cpp
-      XWindowsClipboardAnyBitmapConverter.h
-      XWindowsClipboardBMPConverter.cpp
-      XWindowsClipboardBMPConverter.h
-      XWindowsClipboardHTMLConverter.cpp
-      XWindowsClipboardHTMLConverter.h
-      XWindowsClipboardTextConverter.cpp
-      XWindowsClipboardTextConverter.h
-      XWindowsClipboardUCS2Converter.cpp
-      XWindowsClipboardUCS2Converter.h
-      XWindowsClipboardUTF8Converter.cpp
-      XWindowsClipboardUTF8Converter.h
       XWindowsEventQueueBuffer.cpp
       XWindowsEventQueueBuffer.h
       XWindowsKeyState.cpp
@@ -161,6 +158,24 @@ elseif(UNIX)
       XWindowsUtil.h
       ${CMAKE_CURRENT_BINARY_DIR}/XWindowsConfig.h
     )
+    if(DESKFLOW_ENABLE_CLIPBOARD)
+      # converters are only reachable from the real XWindowsClipboard.cpp,
+      # so they drop out of the build with it
+      list(APPEND PLATFORM_SOURCES
+        XWindowsClipboardAnyBitmapConverter.cpp
+        XWindowsClipboardAnyBitmapConverter.h
+        XWindowsClipboardBMPConverter.cpp
+        XWindowsClipboardBMPConverter.h
+        XWindowsClipboardHTMLConverter.cpp
+        XWindowsClipboardHTMLConverter.h
+        XWindowsClipboardTextConverter.cpp
+        XWindowsClipboardTextConverter.h
+        XWindowsClipboardUCS2Converter.cpp
+        XWindowsClipboardUCS2Converter.h
+        XWindowsClipboardUTF8Converter.cpp
+        XWindowsClipboardUTF8Converter.h
+      )
+    endif()
   endif()
 
   if(LIBEI_FOUND)

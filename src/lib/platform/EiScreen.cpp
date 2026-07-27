@@ -65,7 +65,9 @@ EiScreen::EiScreen(bool isPrimary, IEventQueue *events, bool usePortal)
       });
       m_portalRemoteDesktop = new PortalRemoteDesktop(this, m_events);
       // Create clipboard for remote desktop (secondary screen)
+#ifndef DESKFLOW_NO_CLIPBOARD
       m_clipboard = new EiClipboard(kClipboardClipboard);
+#endif
     }
   } else {
     // Note: socket backend does not support reconnections
@@ -74,7 +76,9 @@ EiScreen::EiScreen(bool isPrimary, IEventQueue *events, bool usePortal)
       throw std::runtime_error("failed to init ei context");
     }
     // Create clipboard for socket backend
+#ifndef DESKFLOW_NO_CLIPBOARD
     m_clipboard = new EiClipboard(kClipboardClipboard);
+#endif
   }
 
   // disable sleep if the flag is set

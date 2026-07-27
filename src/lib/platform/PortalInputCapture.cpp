@@ -176,7 +176,9 @@ PortalInputCapture::PortalInputCapture(EiScreen *screen, IEventQueue *events)
       m_portal{xdp_portal_new()}
 {
   // Create clipboard for primary clipboard ID
+#ifndef DESKFLOW_NO_CLIPBOARD
   m_clipboard = new EiClipboard(kClipboardClipboard);
+#endif
 
   m_glibMainLoop = g_main_loop_new(nullptr, true);
 
@@ -602,7 +604,11 @@ gboolean PortalInputCapture::initSession()
       return FALSE;
     }
     m_session = session;
+#ifndef DESKFLOW_NO_CLIPBOARD
+    // never ask the portal for clipboard access: the permission is not needed
+    // by this build and requesting it would show up in the portal prompt
     xdp_session_request_clipboard(xdp_input_capture_session_get_session(session));
+#endif
     xdp_input_capture_session_set_session_persistence(session, XDP_INPUT_CAPTURE_SESSION_PERSISTENCE_PERSISTENT);
     if (auto sessionToken = Settings::value(Settings::Server::XdpRestoreToken).toByteArray(); !sessionToken.isEmpty()) {
       xdp_input_capture_session_set_restore_token(session, strdup(sessionToken.data()));

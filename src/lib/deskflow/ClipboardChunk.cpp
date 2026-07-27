@@ -102,12 +102,13 @@ TransferState ClipboardChunk::assemble(
 
 #ifdef DESKFLOW_NO_CLIPBOARD
   // Clipboard sharing is compiled out. The message above is still read so the
-  // connection stays in sync with a stock peer, but nothing is accumulated:
-  // upstream only checks the total against s_expectedSize when DataEnd
-  // arrives, so a peer that streams DataChunk messages and never terminates
-  // them can grow dataCached without bound. Since this build discards the
-  // payload anyway, the safe thing is to never buffer a byte of it.
-  dataCached.clear();
+  // connection stays in sync with a stock peer, but the payload is dropped
+  // here rather than reassembled. Upstream bounds the reassembly buffer
+  // against the declared size, which is sound; a build that discards the
+  // result regardless can do better by never buffering a byte of it, so
+  // there is no accumulation for a peer to drive at all.
+  (void)maxDataSize;
+  reset();
 
   switch (mark) {
   case ChunkType::DataStart:
@@ -116,12 +117,12 @@ TransferState ClipboardChunk::assemble(
   case ChunkType::DataChunk:
     return InProgress;
   case ChunkType::DataEnd:
-    return (id >= kClipboardEnd) ? Error : Finished;
+    return Finished;
   default:
     break;
   }
 
-  LOG_ERR("clipboard transmission failed: unknown error");
+  LOG_ERR("unknown clipboard chunk mark");
   return Error;
 #else
   if (mark == ChunkType::DataStart) {

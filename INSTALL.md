@@ -3,17 +3,17 @@
 `deskflow-nc` is [Deskflow](https://github.com/deskflow/deskflow) built with
 clipboard sharing compiled out. Keyboard, mouse and screen switching work exactly
 as upstream; nothing you copy on one machine can reach another. See
-[doc/no-clipboard.md](doc/no-clipboard.md) for what was changed and how to verify
+[docs/no-clipboard.md](docs/no-clipboard.md) for what was changed and how to verify
 it.
 
 Replace `PerkeleSec/deskflow-nc` below if you host the fork somewhere else.
 
 > [!CAUTION]
-> **Nothing has been released yet — these commands will not work, by design.**
-> The branch is based on upstream `v1.26.0`, which predates the fix for
-> CVE-2026-41477 (local privilege escalation via the Windows daemon IPC
-> endpoint). No tag will be cut until that is resolved. See
-> [doc/no-clipboard.md](doc/no-clipboard.md#upstream-base-and-known-cves).
+> **Nothing has been released yet — these commands will not work until a tag is
+> cut.** The branch is now based on upstream `master`, which carries the fixes
+> for CVE-2026-41477; note that this is an unreleased upstream commit rather
+> than a tagged release. See
+> [docs/no-clipboard.md](docs/no-clipboard.md#upstream-base-and-known-cves).
 
 > [!IMPORTANT]
 > These builds are not signed with an Apple Developer ID and not signed with an
@@ -127,7 +127,7 @@ build. In **Server settings**, the clipboard checkbox reads *"Clipboard sharing
 (removed from this build)"* and cannot be ticked.
 
 For a machine-checkable answer, run the symbol checks in
-[doc/no-clipboard.md](doc/no-clipboard.md#verifying-a-build) against the
+[docs/no-clipboard.md](docs/no-clipboard.md#verifying-a-build) against the
 installed binaries.
 
 ## Signing

@@ -30,7 +30,11 @@
 #include "platform/OSXEventQueueBuffer.h"
 #include "platform/OSXKeyState.h"
 #include "platform/OSXMediaKeySupport.h"
+#ifndef DESKFLOW_NO_CLIPBOARD
+// getDraggedFileURL() is currently unreferenced upstream, but it reads
+// NSDragPboard, so it is kept out of clipboard-free builds entirely
 #include "platform/OSXPasteboardPeeker.h"
+#endif
 #include "platform/OSXScreenSaver.h"
 
 #include <AppKit/NSEvent.h>
@@ -224,8 +228,14 @@ void *OSXScreen::getEventTarget() const
 
 bool OSXScreen::getClipboard(ClipboardID, IClipboard *dst) const
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never read the macOS pasteboard
+  (void)dst;
+  return false;
+#else
   Clipboard::copy(dst, &m_pasteboard);
   return true;
+#endif
 }
 
 void OSXScreen::getShape(int32_t &x, int32_t &y, int32_t &w, int32_t &h) const
@@ -682,9 +692,11 @@ void OSXScreen::hideCursor()
 
 void OSXScreen::enable()
 {
+#ifndef DESKFLOW_NO_CLIPBOARD
   // watch the clipboard
   m_clipboardTimer = m_events->newTimer(1.0, nullptr);
   m_events->addHandler(EventTypes::Timer, m_clipboardTimer, [this](const auto &) { checkClipboards(); });
+#endif
 
   m_axTimer = m_events->newTimer(1.0, nullptr);
   m_events->addHandler(EventTypes::Timer, m_axTimer, [this](const auto &) { checkAXPermissions(); });
@@ -829,21 +841,29 @@ void OSXScreen::leave()
 
 bool OSXScreen::setClipboard(ClipboardID, const IClipboard *src)
 {
+#ifdef DESKFLOW_NO_CLIPBOARD
+  // clipboard sharing is compiled out: never write the macOS pasteboard
+  (void)src;
+  return false;
+#else
   if (src != nullptr) {
     LOG_DEBUG("setting clipboard");
     Clipboard::copy(&m_pasteboard, src);
   }
   return true;
+#endif
 }
 
 void OSXScreen::checkClipboards()
 {
+#ifndef DESKFLOW_NO_CLIPBOARD
   LOG_VERBOSE("checking clipboard");
   if (m_pasteboard.synchronize()) {
     LOG_DEBUG("clipboard changed");
     sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardClipboard);
     sendClipboardEvent(EventTypes::ClipboardGrabbed, kClipboardSelection);
   }
+#endif
 }
 
 void OSXScreen::openScreensaver(bool notify)

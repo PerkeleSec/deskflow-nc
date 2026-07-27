@@ -31,7 +31,7 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent), ui{std::make_unique
 #ifdef DESKFLOW_NO_CLIPBOARD
   // "copy version info" is the one place the GUI would write to the local
   // clipboard. It is dropped so that no build artifact references QClipboard
-  // at all and the symbol checks in doc/no-clipboard.md stay clean.
+  // at all and the symbol checks in docs/no-clipboard.md stay clean.
   ui->btnCopyVersion->setVisible(false);
 #else
   ui->btnCopyVersion->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::EditCopy));

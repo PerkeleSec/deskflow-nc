@@ -302,7 +302,7 @@ jobs:
 
       # deskflow-nc gate: the shipped binaries must not reference a single OS
       # clipboard API. This is what makes "clipboard support is compiled out"
-      # an auditable claim rather than a promise. See doc/no-clipboard.md.
+      # an auditable claim rather than a promise. See docs/no-clipboard.md.
       - name: Verify no clipboard symbols (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -336,6 +336,30 @@ jobs:
               found=1
             fi
           done < <(find build/bin -type f -perm +111 ! -name '*.dylib')
+          if [ "$found" -ne 0 ]; then exit 1; fi
+          echo "OK: no clipboard symbols in any binary"
+
+      # On Linux the OS clipboard surface is X11 selections and the libportal
+      # clipboard calls, so match those entry points rather than the word
+      # "clipboard" alone -- nm -u lists undefined symbols, and internal C++
+      # class names never appear there.
+      - name: Verify no clipboard symbols (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          found=0
+          while IFS= read -r bin; do
+            echo "--- $bin"
+            syms=$(nm -uC "$bin" 2>/dev/null \
+              | grep -iE 'XSetSelectionOwner|XGetSelectionOwner|XConvertSelection|xdp_session_(request|get_selection|set_selection|selection)|clipboard|pasteboard' \
+              || true)
+            if [ -n "$syms" ]; then
+              echo "FAIL: clipboard symbols found in $bin"
+              echo "$syms"
+              found=1
+            fi
+          done < <(find build/bin -type f -executable ! -name '*.so*')
           if [ "$found" -ne 0 ]; then exit 1; fi
           echo "OK: no clipboard symbols in any binary"
 
