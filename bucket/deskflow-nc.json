@@ -1,0 +1,50 @@
+{
+    "$schema": "https://raw.githubusercontent.com/ScoopInstaller/Scoop/master/schema.json",
+    "version": "0.0.0-nc0",
+    "description": "Keyboard and mouse sharing utility, built with clipboard sharing removed",
+    "homepage": "https://github.com/PerkeleSec/deskflow-nc",
+    "license": "GPL-2.0-only",
+    "notes": [
+        "Clipboard sharing is compiled out of this build; the setting in the GUI is disabled on purpose.",
+        "For the daemon/service install (needed at the Windows login screen and for UAC prompts), use the MSI from the releases page instead."
+    ],
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v0.0.0-nc0/deskflow-0.0.0-nc0-win-x64.7z",
+            "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "extract_dir": "deskflow-0.0.0-nc0-win-x64"
+        },
+        "arm64": {
+            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v0.0.0-nc0/deskflow-0.0.0-nc0-win-arm64.7z",
+            "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "extract_dir": "deskflow-0.0.0-nc0-win-arm64"
+        }
+    },
+    "bin": [
+        "deskflow-core.exe"
+    ],
+    "shortcuts": [
+        [
+            "Deskflow.exe",
+            "Deskflow NC"
+        ]
+    ],
+    "checkver": {
+        "github": "https://github.com/PerkeleSec/deskflow-nc"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v$version/deskflow-$version-win-x64.7z",
+                "extract_dir": "deskflow-$version-win-x64"
+            },
+            "arm64": {
+                "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v$version/deskflow-$version-win-arm64.7z",
+                "extract_dir": "deskflow-$version-win-arm64"
+            }
+        },
+        "hash": {
+            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v$version/sums.txt"
+        }
+    }
+}

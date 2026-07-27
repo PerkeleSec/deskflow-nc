@@ -1,3 +1,19 @@
+> [!IMPORTANT]
+> **This is `deskflow-nc`, a fork of [Deskflow](https://github.com/deskflow/deskflow) with clipboard sharing compiled out.**
+>
+> Keyboard, mouse and screen switching behave exactly as upstream. Clipboard
+> contents cannot cross between machines, and the binaries reference no OS
+> clipboard API at all — a CI step fails the build if they do.
+>
+> - **Install it:** [INSTALL.md](INSTALL.md) — `brew` on macOS, `scoop` or MSI on Windows.
+> - **What was changed and how to check it:** [doc/no-clipboard.md](doc/no-clipboard.md).
+> - Bug reports about Deskflow itself belong [upstream](https://github.com/deskflow/deskflow/issues), not here. Upstream considers clipboard sharing a core feature and will not take these changes, which is why this fork exists.
+>
+> The rest of this README is upstream's, and still describes clipboard sharing
+> as supported. It is not, in this build.
+
+---
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/deskflow/deskflow-artwork/blob/main/logo/deskflow-logo-dark-200px.png?raw=true">
   <source media="(prefers-color-scheme: light)" srcset="https://github.com/deskflow/deskflow-artwork/blob/main/logo/deskflow-logo-light-200px.png?raw=true">
