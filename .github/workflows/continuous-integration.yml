@@ -458,8 +458,13 @@ jobs:
 
   release:
     needs: ci-passed
-    if: (github.ref == 'refs/heads/master') || (contains(github.ref, '/tags/v'))
+    if: (github.ref == 'refs/heads/no-clipboard') || (contains(github.ref, '/tags/v'))
     runs-on: ubuntu-latest
+
+    # the secrets context is not available in a step-level `if`, so the token is
+    # surfaced here to let the manifest bump skip itself when it is not set
+    env:
+      NC_TAP_TOKEN: ${{ secrets.NC_TAP_TOKEN }}
 
     steps:
       - name: Fancy Checkout
@@ -489,7 +494,7 @@ jobs:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       - name: Deploy continuous
-        if: (github.ref == 'refs/heads/master') && !(contains(github.ref, '/tags/v'))
+        if: (github.ref == 'refs/heads/no-clipboard') && !(contains(github.ref, '/tags/v'))
         uses: softprops/action-gh-release@v3
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
@@ -523,10 +528,10 @@ jobs:
       # bump; without it the step is skipped and you run
       # packaging/update-manifests.sh by hand.
       - name: Bump packaging manifests
-        if: ${{ contains(github.ref, '/tags/v') && secrets.NC_TAP_TOKEN != '' }}
+        if: ${{ contains(github.ref, '/tags/v') && env.NC_TAP_TOKEN != '' }}
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.NC_TAP_TOKEN }}
+          GH_TOKEN: ${{ env.NC_TAP_TOKEN }}
         run: |
           ./packaging/update-manifests.sh \
             --version "${{env.DESKFLOW_PACKAGE_VERSION}}" \
