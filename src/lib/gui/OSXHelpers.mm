@@ -6,6 +6,8 @@
 
 #import "OSXHelpers.h"
 
+#import "common/Constants.h"
+
 #import <Cocoa/Cocoa.h>
 #import <CoreData/CoreData.h>
 #import <Foundation/Foundation.h>
@@ -43,7 +45,11 @@ void requestOSXNotificationPermission()
 bool isOSXDevelopmentBuild()
 {
   std::string bundleURL = [[[NSBundle mainBundle] bundleURL].absoluteString UTF8String];
-  return (bundleURL.find("Applications/Deskflow.app") == std::string::npos);
+  // derived from kAppName rather than hardcoded: this fork ships as
+  // Deskflow-NC.app, and a stale literal here would classify an ordinary
+  // install as a development build, which silently disables notifications
+  const std::string installedPath = std::string("Applications/") + kAppName + ".app";
+  return (bundleURL.find(installedPath) == std::string::npos);
 }
 
 bool showOSXNotification(const QString &title, const QString &body)

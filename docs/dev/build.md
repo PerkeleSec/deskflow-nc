@@ -74,7 +74,7 @@ For development codesign:
 5. To get your ID, run: `security find-identity -v -p codesigning login.keychain-db`
 6. Pass the ID to CMake, e.g. `-DAPPLE_CODESIGN_DEV=Apple Development: bob@exmaple.com (KLGSJHLFXY)`
 7. Configure and build
-8. To verify, run: `codesign -d -r- build/bin/Deskflow.app`
+8. To verify, run: `codesign -d -r- build/bin/Deskflow-NC.app`
 
 ## Build
 

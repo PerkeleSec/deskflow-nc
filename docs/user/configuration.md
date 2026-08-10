@@ -3,6 +3,10 @@
  Deskflow will automatically figure out where to save settings and other files.
 
 
+> [!NOTE]
+> Paths below reflect this fork's display name, **Deskflow-NC**. Upstream
+> Deskflow uses `Deskflow` in the same positions.
+
 ## Search paths
 
 Deskflow will look for settings in several places depending on your operating system.
@@ -10,27 +14,27 @@ The search order for a setting file depends on your operating system
 
 ### Linux
 
-  1. `<XDG_CONFIG_HOME>/Deskflow/Deskflow.conf`
-  2. `~/.config/Deskflow/Deskflow.conf`
-  3. `/etc/Deskflow/Deskflow.conf`
+  1. `<XDG_CONFIG_HOME>/Deskflow-NC/Deskflow-NC.conf`
+  2. `~/.config/Deskflow-NC/Deskflow-NC.conf`
+  3. `/etc/Deskflow-NC/Deskflow-NC.conf`
  
 A new settings file will be created in the user path if no settings file is found.
 The path of the settings file will be used as the base for all other config files.
 
 ### macOS
  
-  1. `~/Library/Deskflow/Deskflow.conf`
-  2. `/Library/Deskflow/Deskflow.conf`
+  1. `~/Library/Deskflow-NC/Deskflow-NC.conf`
+  2. `/Library/Deskflow-NC/Deskflow-NC.conf`
  
 A new settings file will be created in the user path if no settings file is found.
 The path of the settings file will be used as the base for all other config files.
 
 ### Windows
 
-  1. `<install-path>/settings/Deskflow.conf`
-  2. Windows Registry `HKCU\Software\Deskflow\Deskflow`
+  1. `<install-path>/settings/Deskflow-NC.conf`
+  2. Windows Registry `HKCU\Software\Deskflow-NC\Deskflow-NC`
 
-Windows will save to the install dir if settings are loaded from there. If not, it saves any other config files in: `C:\ProgramData\Deskflow\`
+Windows will save to the install dir if settings are loaded from there. If not, it saves any other config files in: `C:\ProgramData\Deskflow-NC\`
 
 When using settings from the install dir, the service mode will not be available.
 
