@@ -145,16 +145,20 @@ open(p, "w", encoding="utf-8", newline="\n").write(s)
 PY
 
 echo "writing bucket/deskflow-nc.json"
-python3 - "$VERSION" "$REPO" "$H_ZIP_X64" "$H_ZIP_ARM" "$EXTRACT_X64" "$EXTRACT_ARM" <<'PY'
+# The asset filenames are passed in rather than rebuilt here. They were
+# reconstructed once before, which silently dropped the "-portable" suffix from
+# the URL while the hash and extract_dir kept it -- a manifest that looks
+# plausible and 404s on install.
+python3 - "$VERSION" "$REPO" "$H_ZIP_X64" "$H_ZIP_ARM" "$EXTRACT_X64" "$EXTRACT_ARM" "$ZIP_X64" "$ZIP_ARM" <<'PY'
 import json, sys
-version, repo, h64, harm, ex64, exarm = sys.argv[1:7]
+version, repo, h64, harm, ex64, exarm, name64, namearm = sys.argv[1:9]
 p = "bucket/deskflow-nc.json"
 m = json.load(open(p, encoding="utf-8"))
 m["version"] = version
 base = f"https://github.com/{repo}/releases/download/v{version}"
-for key, arch, h, ex in (("64bit", "x64", h64, ex64), ("arm64", "arm64", harm, exarm)):
+for key, h, ex, name in (("64bit", h64, ex64, name64), ("arm64", harm, exarm, namearm)):
     entry = m["architecture"][key]
-    entry["url"] = f"{base}/deskflow-{version}-win-{arch}.7z"
+    entry["url"] = f"{base}/{name}"
     entry["hash"] = h
     if ex:
         entry["extract_dir"] = ex

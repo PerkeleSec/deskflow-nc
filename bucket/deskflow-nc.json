@@ -10,12 +10,12 @@
     ],
     "architecture": {
         "64bit": {
-            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v1.26.0-nc1/deskflow-1.26.0-nc1-win-x64.7z",
+            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v1.26.0-nc1/deskflow-1.26.0-nc1-win-x64-portable.7z",
             "hash": "41baf4dd4254a737fe85983b544bcc5a4c3ee940d2bbebd0c107b18fc45e68f5",
             "extract_dir": "deskflow-1.26.0-nc1-win-x64-portable"
         },
         "arm64": {
-            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v1.26.0-nc1/deskflow-1.26.0-nc1-win-arm64.7z",
+            "url": "https://github.com/PerkeleSec/deskflow-nc/releases/download/v1.26.0-nc1/deskflow-1.26.0-nc1-win-arm64-portable.7z",
             "hash": "39695c8db730a0567485052898b970609458aa1e56ea0ff0e44e6ddade11c265",
             "extract_dir": "deskflow-1.26.0-nc1-win-arm64-portable"
         }
