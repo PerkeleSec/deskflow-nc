@@ -4,6 +4,14 @@
 on run argv
   set image_name to item 1 of argv
 
+  -- deskflow-nc: derived rather than hardcoded. CPack passes the volume name,
+  -- which is CMAKE_PROJECT_PROPER_NAME, and the bundle is
+  -- <CMAKE_PROJECT_PROPER_NAME>.app -- so deriving one from the other means a
+  -- display-name change cannot leave this script pointing at an app that is not
+  -- in the image. Hardcoding "Deskflow.app" here failed the dmg build with
+  -- Finder error -10006 the first time the name changed.
+  set app_name to image_name & ".app"
+
   tell application "Finder"
   tell disk image_name
 
@@ -39,7 +47,7 @@ on run argv
         set toolbar visible to false
         set pathbar visible to false
         set the bounds to { 200, 120, 800, 520 }
-        set position of item "Deskflow.app" to { 144, 190 }
+        set position of item app_name to { 144, 190 }
         set position of item "Applications" to { 455, 190 }
       end tell
     close
