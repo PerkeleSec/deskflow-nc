@@ -50,14 +50,14 @@ winget install --id Microsoft.VCRedist.2015+.x64 --silent --accept-package-agree
 Run PowerShell **as Administrator** for the rest of this section.
 
 ```powershell
-irm https://github.com/PerkeleSec/deskflow-nc/releases/download/v1.26.0-nc1/deskflow-1.26.0-nc1-win-x64.msi -OutFile $env:TEMP\deskflow-nc.msi
+irm https://github.com/PerkeleSec/deskflow-nc/releases/download/v1.26.0-nc2/deskflow-1.26.0-nc2-win-x64.msi -OutFile $env:TEMP\deskflow-nc.msi
 ```
 
 ```powershell
 Start-Process msiexec -ArgumentList "/i `"$env:TEMP\deskflow-nc.msi`" /qn /norestart" -Wait -Verb RunAs
 ```
 
-On ARM machines use `deskflow-1.26.0-nc1-win-arm64.msi`.
+On ARM machines use `deskflow-1.26.0-nc2-win-arm64.msi`.
 
 > [!NOTE]
 > The MSI shares its upgrade code with upstream Deskflow, so installing it

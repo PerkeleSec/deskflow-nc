@@ -185,7 +185,7 @@ exceptions are `Deskflow-NC`, and the settings directories are
 
 Only the display identity is renamed. `project()` is still `deskflow`, so binary
 names (`deskflow-core`, `deskflow.exe`) and package filenames
-(`deskflow-1.26.0-nc1-win-x64.msi`) are unchanged, which keeps the cask, the
+(`deskflow-1.26.0-nc2-win-x64.msi`) are unchanged, which keeps the cask, the
 Scoop manifest and every published URL stable.
 
 `CPACK_WIX_UPGRADE_GUID` is deliberately left as upstream's. Installing this

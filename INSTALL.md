@@ -13,10 +13,15 @@ troubleshooting and clean removal — see
 [INSTALL-DETAILED.md](INSTALL-DETAILED.md).
 
 > [!NOTE]
-> The current release is **v1.26.0-nc1**. It is built from an unreleased
+> The current release is **v1.26.0-nc2**. It is built from an unreleased
 > upstream commit rather than a tagged upstream release, deliberately — that is
 > what carries the fixes for CVE-2026-41477. See
 > [docs/no-clipboard.md](docs/no-clipboard.md#upstream-base-and-known-cves).
+>
+> Upgrading from **v1.26.0-nc1**: that build installed as `Deskflow`. From nc2
+> the app, the Windows service and the settings directory are all named
+> `Deskflow-NC`, so settings do not carry over and a server screen layout has to
+> be re-entered once.
 
 > [!IMPORTANT]
 > These builds are not signed with an Apple Developer ID and not signed with an
@@ -62,7 +67,7 @@ Accessibility and Input Monitoring grants survive either way — see
 ### Without Homebrew
 
 ```bash
-curl -fL -o /tmp/deskflow-nc.dmg https://github.com/PerkeleSec/deskflow-nc/releases/latest/download/deskflow-1.26.0-nc1-macos-arm64.dmg
+curl -fL -o /tmp/deskflow-nc.dmg https://github.com/PerkeleSec/deskflow-nc/releases/latest/download/deskflow-1.26.0-nc2-macos-arm64.dmg
 ```
 
 ```bash
@@ -101,7 +106,7 @@ scoop uninstall deskflow-nc
 ### MSI (registers the service, machine-wide)
 
 ```powershell
-irm https://github.com/PerkeleSec/deskflow-nc/releases/latest/download/deskflow-1.26.0-nc1-win-x64.msi -OutFile $env:TEMP\deskflow-nc.msi
+irm https://github.com/PerkeleSec/deskflow-nc/releases/latest/download/deskflow-1.26.0-nc2-win-x64.msi -OutFile $env:TEMP\deskflow-nc.msi
 ```
 
 ```powershell
