@@ -95,7 +95,10 @@ jobs:
 
       - name: Clipboard guard census
         shell: bash
-        run: ./packaging/check-guards.sh
+        # invoked via bash, not ./: this repo is often edited on Windows where
+        # core.filemode is false, so a lost exec bit would otherwise be a
+        # 'Permission denied' CI failure rather than a real finding
+        run: bash packaging/check-guards.sh
 
   analyze-valgrind:
     needs: [lint-clang, lint-guards]
@@ -591,6 +594,6 @@ jobs:
         env:
           GH_TOKEN: ${{ env.NC_TAP_TOKEN }}
         run: |
-          ./packaging/update-manifests.sh \
+          bash packaging/update-manifests.sh \
             --version "${{env.DESKFLOW_PACKAGE_VERSION}}" \
             --push
