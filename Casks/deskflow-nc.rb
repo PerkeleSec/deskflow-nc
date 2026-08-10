@@ -15,9 +15,9 @@ cask "deskflow-nc" do
   # VSCMD_ARG_TGT_ARCH. See deploy/mac/deploy.cmake and deploy/windows/deploy.cmake.
   arch arm: "arm64", intel: "x86_64"
 
-  version "1.26.0-nc1"
-  sha256 arm:   "5bd4b79ebcc9d8a907dc3cd60b9e3f15cf761e3df1427a0df4050b5b6c558689",
-         intel: "5cac2b407541409c90d904ad8be18ce89cd9f819f718ff697bff3b1f41a76b95"
+  version "1.26.0-nc2"
+  sha256 arm:   "30b2aa3703f3b6f8a6d3878a427e9ad2eecb51867127d67bbb8bd9569bfda191",
+         intel: "165ba9de2eec782707bf94ffb612f7ec33d864df3ab68c9545dc27926f8318e1"
 
   url "https://github.com/PerkeleSec/deskflow-nc/releases/download/v#{version}/deskflow-#{version}-macos-#{arch}.dmg",
       verified: "github.com/PerkeleSec/deskflow-nc/"
