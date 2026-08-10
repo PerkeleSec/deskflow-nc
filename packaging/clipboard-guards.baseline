@@ -1,0 +1,16 @@
+src/lib/client/ServerProxy.cpp:5
+src/lib/deskflow/ClipboardChunk.cpp:1
+src/lib/deskflow/ClipboardChunk.h:1
+src/lib/deskflow/Screen.cpp:5
+src/lib/gui/dialogs/AboutDialog.cpp:3
+src/lib/gui/dialogs/ServerConfigDialog.cpp:1
+src/lib/platform/EiScreen.cpp:2
+src/lib/platform/MSWindowsScreen.cpp:7
+src/lib/platform/OSXScreen.mm:5
+src/lib/platform/PortalInputCapture.cpp:2
+src/lib/platform/XWindowsScreen.cpp:1
+src/lib/server/ClientProxy1_0.cpp:3
+src/lib/server/ClientProxy1_6.cpp:3
+src/lib/server/Server.cpp:2
+src/lib/server/Server.h:2
+src/unittests/deskflow/ClipboardChunksTests.cpp:3

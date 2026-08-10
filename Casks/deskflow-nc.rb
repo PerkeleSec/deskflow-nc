@@ -36,10 +36,10 @@ cask "deskflow-nc" do
   # settings location on purpose, so a machine cannot end up running both.
   conflicts_with cask: "deskflow"
 
-  app "Deskflow.app"
+  app "Deskflow-NC.app"
 
   zap trash: [
-    "~/Library/Deskflow",
+    "~/Library/Deskflow-NC",
     "~/Library/Saved Application State/org.deskflow.deskflow.savedState",
   ]
 end

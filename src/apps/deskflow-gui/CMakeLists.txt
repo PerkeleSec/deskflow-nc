@@ -3,8 +3,15 @@
 # SPDX-License-Identifier: MIT
 
 if(APPLE)
-  set(target Deskflow)
+  # deskflow-nc: must track CMAKE_PROJECT_PROPER_NAME, because both the install
+  # path (CMAKE_INSTALL_BINDIR = <PROPER_NAME>.app/...) and MacCodesign.cmake's
+  # $<TARGET_BUNDLE_DIR:${CMAKE_PROJECT_PROPER_NAME}> resolve a target by that
+  # name. Leaving it hardcoded would break the macOS build the moment the
+  # display name changed.
+  set(target ${CMAKE_PROJECT_PROPER_NAME})
 else()
+  # deliberately not renamed: keeping deskflow.exe means the Scoop manifest,
+  # its shortcut entry and the package contents all stay as published
   set(target deskflow)
 endif()
 
@@ -21,7 +28,10 @@ elseif(BUILD_OSX_BUNDLE)
   set(BUNDLE_BUNDLE_NAME "${target}")
   set(BUNDLE_DISPLAY_NAME "${target}")
   set(BUNDLE_GUI_IDENTIFIER "${CMAKE_PROJECT_REV_FQDN}")
-  set(BUNDLE_ICON_FILE ${target}.icns)
+  # pinned to the actual filename rather than ${target}: the icns copied into
+  # the bundle below is Deskflow.icns, so deriving this from a renamed target
+  # would point CFBundleIconFile at a file that is not there
+  set(BUNDLE_ICON_FILE Deskflow.icns)
   set(BUNDLE_INFO_STRING "${CMAKE_PROJECT_DESCRIPTION}")
   set(BUNDLE_COPYRIGHT "${CMAKE_PROJECT_COPYRIGHT}")
 

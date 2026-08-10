@@ -31,7 +31,7 @@ in the GUI. Config file paths are given at the end for scripted deployment.
 ### Use the MSI, not Scoop
 
 For the server, install the MSI. It registers a Windows service called
-`Deskflow`, which is what lets the app keep working on secure desktops — the
+`Deskflow-NC`, which is what lets the app keep working on secure desktops — the
 login screen and UAC prompts. Scoop's package is a per-user portable install
 and cannot do that; you would notice the first time a UAC dialog appeared and
 the mouse stopped responding.
@@ -68,22 +68,30 @@ On ARM machines use `deskflow-1.26.0-nc1-win-arm64.msi`.
 ### Confirm the service is running
 
 ```powershell
-Get-Service -Name Deskflow
+Get-Service -Name Deskflow-NC
 ```
 
-Expect `Running`. If it is `Stopped`, start it with `Start-Service Deskflow`.
+Expect `Running`. If it is `Stopped`, start it with `Start-Service Deskflow-NC`.
 
-### Open the firewall
+### Check the firewall
 
-The server listens on TCP 24800. Nothing will connect until this is allowed:
+The MSI already adds inbound firewall exceptions for `deskflow-core.exe`, named
+*Deskflow-NC Server* and *Deskflow-NC Client*, so in most cases there is nothing
+to do. Confirm they are there:
 
 ```powershell
-New-NetFirewallRule -DisplayName "Deskflow NC" -Direction Inbound -Protocol TCP -LocalPort 24800 -Action Allow -Profile Private,Domain
+Get-NetFirewallRule -DisplayName 'Deskflow*' | Select-Object DisplayName, Direction, Action, Enabled
 ```
 
-Adjust `-Profile` to match the network the two machines share. If they are on a
-network Windows classifies as Public, either add `Public` or reclassify the
-network — a rule scoped to Private will silently not apply.
+Those are program-scoped rules and apply on any port. Only if they are missing —
+or if a group policy strips them — add a port rule by hand:
+
+```powershell
+New-NetFirewallRule -DisplayName "Deskflow-NC 24800" -Direction Inbound -Protocol TCP -LocalPort 24800 -Action Allow -Profile Private,Domain
+```
+
+Match `-Profile` to how Windows classifies the network the two machines share.
+A rule scoped to Private silently does not apply on a network marked Public.
 
 ### Note the hostname
 
@@ -117,7 +125,7 @@ the app and offers no override in the UI.
 This is the step people miss. Without it the Mac connects successfully and then
 does nothing at all — the cursor never appears.
 
-Open **System Settings → Privacy & Security** and add `Deskflow.app` under
+Open **System Settings → Privacy & Security** and add `Deskflow-NC.app` under
 **both**:
 
 - **Accessibility** — lets Deskflow inject mouse and keyboard events
@@ -196,7 +204,7 @@ Remove the app and its settings in one step:
 brew uninstall --zap --cask deskflow-nc
 ```
 
-`--zap` also removes `~/Library/Deskflow` and the saved application state. Plain
+`--zap` also removes `~/Library/Deskflow-NC` and the saved application state. Plain
 `brew uninstall --cask deskflow-nc` leaves those behind, which is what you want
 if you intend to reinstall.
 
@@ -209,7 +217,7 @@ brew untap PerkeleSec/nc
 If you installed from the `.dmg` rather than Homebrew:
 
 ```bash
-sudo rm -rf /Applications/Deskflow.app ~/Library/Deskflow
+sudo rm -rf /Applications/Deskflow-NC.app ~/Library/Deskflow-NC
 ```
 
 The Privacy & Security grants survive uninstallation and will silently reapply
@@ -244,19 +252,20 @@ The MSI stops and removes the `Deskflow` service as part of uninstallation.
 Confirm it is gone — this should return nothing:
 
 ```powershell
-Get-Service -Name Deskflow -ErrorAction SilentlyContinue
+Get-Service -Name Deskflow-NC -ErrorAction SilentlyContinue
 ```
 
-Remove the firewall rule you added:
+The MSI removes its own firewall exceptions. If you added a port rule by hand,
+remove that too:
 
 ```powershell
-Remove-NetFirewallRule -DisplayName "Deskflow NC"
+Remove-NetFirewallRule -DisplayName "Deskflow-NC 24800" -ErrorAction SilentlyContinue
 ```
 
 Settings are left behind on purpose. To remove them too:
 
 ```powershell
-Remove-Item -Recurse -Force "$env:ProgramData\Deskflow","$env:APPDATA\Deskflow" -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force "$env:ProgramData\Deskflow-NC","$env:APPDATA\Deskflow-NC" -ErrorAction SilentlyContinue
 ```
 
 ### Windows — Scoop
@@ -277,15 +286,15 @@ Useful for scripted deployment, or for confirming a clean removal.
 
 | What | Windows (service mode) | Windows (portable) | macOS |
 | --- | --- | --- | --- |
-| Settings | `C:\ProgramData\Deskflow\Deskflow.conf` | `%APPDATA%\Deskflow\Deskflow.conf` | `~/Library/Deskflow/Deskflow.conf` |
-| Server layout | `C:\ProgramData\Deskflow\deskflow-server.conf` | `%APPDATA%\Deskflow\deskflow-server.conf` | `~/Library/Deskflow/deskflow-server.conf` |
-| TLS keys | `C:\ProgramData\Deskflow\tls` | `%APPDATA%\Deskflow\tls` | `~/Library/Deskflow/tls` |
-| Daemon log | `C:\ProgramData\Deskflow\deskflow-daemon.log` | — | — |
+| Settings | `C:\ProgramData\Deskflow-NC\Deskflow-NC.conf` | `%APPDATA%\Deskflow-NC\Deskflow-NC.conf` | `~/Library/Deskflow-NC/Deskflow-NC.conf` |
+| Server layout | `C:\ProgramData\Deskflow-NC\deskflow-server.conf` | `%APPDATA%\Deskflow-NC\deskflow-server.conf` | `~/Library/Deskflow-NC/deskflow-server.conf` |
+| TLS keys | `C:\ProgramData\Deskflow-NC\tls` | `%APPDATA%\Deskflow-NC\tls` | `~/Library/Deskflow-NC/tls` |
+| Daemon log | `C:\ProgramData\Deskflow-NC\deskflow-daemon.log` | — | — |
 
 A settings file can be supplied explicitly:
 
 ```bash
-deskflow-core --settings /path/to/Deskflow.conf
+deskflow-core --settings /path/to/Deskflow-NC.conf
 ```
 
 Default listening port is 24800, changeable in settings under `core/port`.

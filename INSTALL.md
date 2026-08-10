@@ -12,11 +12,10 @@ For a full walkthrough — pairing a Windows server with a macOS client, plus
 troubleshooting and clean removal — see
 [INSTALL-DETAILED.md](INSTALL-DETAILED.md).
 
-> [!CAUTION]
-> **Nothing has been released yet — these commands will not work until a tag is
-> cut.** The branch is now based on upstream `master`, which carries the fixes
-> for CVE-2026-41477; note that this is an unreleased upstream commit rather
-> than a tagged release. See
+> [!NOTE]
+> The current release is **v1.26.0-nc1**. It is built from an unreleased
+> upstream commit rather than a tagged upstream release, deliberately — that is
+> what carries the fixes for CVE-2026-41477. See
 > [docs/no-clipboard.md](docs/no-clipboard.md#upstream-base-and-known-cves).
 
 > [!IMPORTANT]
@@ -41,7 +40,7 @@ ad-hoc-signed app and offers no override in the UI.
 
 After installing, macOS needs two permissions granted before Deskflow can read
 or inject input. Open **System Settings → Privacy & Security** and add
-`Deskflow.app` under both **Accessibility** and **Input Monitoring**. This is
+`Deskflow-NC.app` under both **Accessibility** and **Input Monitoring**. This is
 the same requirement as upstream Deskflow; nothing about it changes here.
 
 Upgrade:
@@ -56,7 +55,7 @@ Uninstall, including settings:
 brew uninstall --zap --cask deskflow-nc
 ```
 
-Drop `--zap` to keep `~/Library/Deskflow` for a later reinstall. Note that the
+Drop `--zap` to keep `~/Library/Deskflow-NC` for a later reinstall. Note that the
 Accessibility and Input Monitoring grants survive either way — see
 [INSTALL-DETAILED.md](INSTALL-DETAILED.md#uninstalling) for clearing those.
 
@@ -67,7 +66,7 @@ curl -fL -o /tmp/deskflow-nc.dmg https://github.com/PerkeleSec/deskflow-nc/relea
 ```
 
 ```bash
-hdiutil attach /tmp/deskflow-nc.dmg -nobrowse -quiet && cp -R "/Volumes/Deskflow/Deskflow.app" /Applications/ && hdiutil detach "/Volumes/Deskflow" -quiet && xattr -dr com.apple.quarantine /Applications/Deskflow.app
+hdiutil attach /tmp/deskflow-nc.dmg -nobrowse -quiet && cp -R "/Volumes/Deskflow-NC/Deskflow-NC.app" /Applications/ && hdiutil detach "/Volumes/Deskflow-NC" -quiet && xattr -dr com.apple.quarantine /Applications/Deskflow-NC.app
 ```
 
 Use `-macos-x86_64.dmg` on Intel Macs.
@@ -130,8 +129,9 @@ Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall','HKLM:
 Start-Process msiexec -ArgumentList "/x {PRODUCT-CODE-HERE} /qn /norestart" -Wait -Verb RunAs
 ```
 
-See [INSTALL-DETAILED.md](INSTALL-DETAILED.md#uninstalling) for removing the
-service, firewall rule and leftover settings.
+The MSI stops and removes the `Deskflow-NC` service and its firewall
+exceptions. See [INSTALL-DETAILED.md](INSTALL-DETAILED.md#uninstalling) for
+clearing leftover settings.
 
 > [!NOTE]
 > The MSI shares its upgrade code with upstream Deskflow, so installing it
@@ -142,8 +142,8 @@ service, firewall rule and leftover settings.
 ## Confirming you got the right build
 
 Open **About** in the GUI: the "copy version info" button is absent in this
-build. In **Server settings**, the clipboard checkbox reads *"Clipboard sharing
-(removed from this build)"* and cannot be ticked.
+build. In **Server settings**, the clipboard checkbox reads *"Enable clipboard
+sharing — removed from this build"* and cannot be ticked.
 
 For a machine-checkable answer, run the symbol checks in
 [docs/no-clipboard.md](docs/no-clipboard.md#verifying-a-build) against the

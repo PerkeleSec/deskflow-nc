@@ -83,6 +83,7 @@ This is the layer that makes the claim checkable rather than merely true.
   `src/lib/platform/noclipboard/OSXClipboard.cpp`: no `PasteboardCreate`, no
   `PasteboardCopyItemFlavorData`, and `OSXScreen` no longer runs the one-second
   pasteboard polling timer.
+
 Linux gets the same treatment, in two parts:
 
 - **X11** — `src/lib/platform/noclipboard/XWindowsClipboard.cpp` replaces the
@@ -104,9 +105,12 @@ API. It is simply never constructed.
 ### 4. The GUI
 
 - The "Enable clipboard sharing" checkbox in the server configuration dialog is
-  shown, unchecked and disabled, relabelled *"Clipboard sharing (removed from
-  this build)"* — visible on purpose, so it is obvious the feature is gone
-  rather than merely switched off, and so nobody files a ticket about it.
+  shown, unchecked and disabled, with *" — removed from this build"* appended
+  to its label — visible on purpose, so it is obvious the feature is gone
+  rather than merely switched off, and so nobody files a ticket about it. The
+  suffix is deliberately not a `tr()` string: a new translatable string makes
+  lupdate rewrite the tracked `translations/*.ts` on every build, which
+  upstream's "unexpected repo changes" CI step then fails on.
 - The size limit spinner is hidden, and both stored settings
   (`Settings::Server::EnableClipboard` and `ClipboardSize`) are pinned off.
 - The About dialog's "copy version info" button is removed. It was the only
@@ -122,7 +126,7 @@ if anything matches — see the *Verify no clipboard symbols* steps in
 ```bash
 # Windows, from a Visual Studio developer prompt
 dumpbin /imports build/bin/deskflow-core.exe | findstr /i clipboard
-dumpbin /imports build/bin/Deskflow.exe      | findstr /i clipboard
+dumpbin /imports build/bin/deskflow.exe      | findstr /i clipboard
 ```
 
 ```bash
@@ -151,6 +155,50 @@ behaviour:
 5. Optionally, run a stock Deskflow on one side and this build on the other.
    The connection must stay up and stay usable; the log on the deskflow-nc side
    shows `discarded clipboard ... (clipboard sharing not built in)`.
+
+## Guarding against a lost guard
+
+The symbol checks above catch a dropped *platform* guard, because the OS
+clipboard APIs reappear in the binary. They cannot catch a dropped *protocol*
+guard: nothing in `ServerProxy.cpp` or the `ClientProxy` classes references an
+OS symbol, so clipboard data could start crossing the wire again with every
+check still green. That is also the likeliest way to break this fork, since the
+usual cause is a rebase conflict resolved in upstream's favour.
+
+`packaging/check-guards.sh` closes that gap. It records how many
+`DESKFLOW_NO_CLIPBOARD` guards each file carries in
+`packaging/clipboard-guards.baseline`, and fails if a count drops or a file
+falls off the list. Adding guards is always fine. CI runs it as the
+`lint-guards` job, which the whole build matrix depends on.
+
+```bash
+packaging/check-guards.sh            # verify
+packaging/check-guards.sh --update   # re-record after an intentional change
+```
+
+## Naming
+
+The build identifies itself as **Deskflow-NC** (`CMAKE_PROJECT_PROPER_NAME`), so
+the macOS bundle is `Deskflow-NC.app`, the Windows service and its firewall
+exceptions are `Deskflow-NC`, and the settings directories are
+`~/Library/Deskflow-NC` and `C:\ProgramData\Deskflow-NC`.
+
+Only the display identity is renamed. `project()` is still `deskflow`, so binary
+names (`deskflow-core`, `deskflow.exe`) and package filenames
+(`deskflow-1.26.0-nc1-win-x64.msi`) are unchanged, which keeps the cask, the
+Scoop manifest and every published URL stable.
+
+`CPACK_WIX_UPGRADE_GUID` is deliberately left as upstream's. Installing this
+therefore *replaces* a stock Deskflow install rather than sitting beside it — a
+machine that can run both can run the one that still shares clipboards. If you
+ever do need them side by side, change that GUID and
+`CMAKE_PROJECT_REV_FQDN`, and expect to re-grant the macOS permissions.
+
+Two couplings to know about if you change the name again: the macOS GUI target
+must equal `CMAKE_PROJECT_PROPER_NAME`, because both the install path and
+`MacCodesign.cmake` resolve a target by that name; and `BUNDLE_ICON_FILE` is
+pinned to `Deskflow.icns` rather than derived from the target, since that is the
+filename actually copied into the bundle.
 
 ## Upstream base and known CVEs
 

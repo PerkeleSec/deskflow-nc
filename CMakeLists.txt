@@ -99,10 +99,24 @@ project(
 )
 
 # Define Additional "PROJECT" vars for packaging and metadata
-set(CMAKE_PROJECT_PROPER_NAME "Deskflow")
+#
+# deskflow-nc: the display name is "Deskflow-NC" so that users and IT can tell
+# this build apart from stock Deskflow at a glance. Only the *display* identity
+# changes -- project() is still "deskflow", so binary names, package filenames
+# and the packaging manifests that point at them are untouched.
+#
+# CPACK_WIX_UPGRADE_GUID is deliberately left as upstream's: this build must
+# replace a stock Deskflow install rather than sit beside it, since a machine
+# that can run both can run the one that still shares clipboards.
+#
+# Note this moves the settings directories, because they are named after
+# CMAKE_PROJECT_PROPER_NAME: ~/Library/Deskflow-NC on macOS,
+# C:\ProgramData\Deskflow-NC on Windows. Existing configs are not migrated.
+set(CMAKE_PROJECT_PROPER_NAME "Deskflow-NC")
 set(CMAKE_PROJECT_VENDOR "${CMAKE_PROJECT_PROPER_NAME} Devs")
 set(CMAKE_PROJECT_COPYRIGHT "(C) 2024-2026 ${CMAKE_PROJECT_VENDOR}")
-set(CMAKE_PROJECT_CONTACT "${CMAKE_PROJECT_PROPER_NAME} <maintainers@deskflow.org>")
+# upstream's address, not this fork's -- point people at the fork instead
+set(CMAKE_PROJECT_CONTACT "${CMAKE_PROJECT_PROPER_NAME} <https://github.com/PerkeleSec/deskflow-nc>")
 set(CMAKE_PROJECT_REV_FQDN "org.deskflow.deskflow")
 
 #Unset the vars used in the project call

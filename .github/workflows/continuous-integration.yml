@@ -79,13 +79,31 @@ jobs:
       - name: Lint Checker
         uses: ./.github/actions/lint-clang
 
+  # deskflow-nc: the clipboard-symbol checks in main-build catch a dropped
+  # platform guard, because the OS APIs reappear in the binary. They cannot
+  # catch a dropped protocol guard -- ServerProxy and the ClientProxies touch
+  # no OS symbols, so clipboard data could start crossing the wire again with
+  # every other check green. This gate covers that.
+  lint-guards:
+    needs: [lint-reuse]
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Clipboard guard census
+        shell: bash
+        run: ./packaging/check-guards.sh
+
   analyze-valgrind:
-    needs: lint-clang
+    needs: [lint-clang, lint-guards]
     if: ${{ github.event_name == 'pull_request' }}
     uses: ./.github/workflows/valgrind-analysis.yml
 
   main-build:
-    needs: lint-clang
+    needs: [lint-clang, lint-guards]
     name: ${{ matrix.target.name }}
     runs-on: ${{ matrix.target.runs-on }}
     permissions:
@@ -403,7 +421,7 @@ jobs:
 
   # Technically, "unix" is a misnomer, but we use it here to mean "Unix-like BSD-derived".
   unix:
-    needs: lint-clang
+    needs: [lint-clang, lint-guards]
     name: unix-${{ matrix.distro.name }}
     runs-on: ${{ vars.CI_UNIX_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 20
@@ -437,7 +455,7 @@ jobs:
             ${{env.CMAKE_CONFIGURE}} -G Ninja
             cmake --build build -j16
   flatpak:
-    needs: lint-clang
+    needs: [lint-clang, lint-guards]
     name: flatpak-${{matrix.flatpak.arch}}
     runs-on: ${{matrix.flatpak.runs-on}}
     timeout-minutes: 60
